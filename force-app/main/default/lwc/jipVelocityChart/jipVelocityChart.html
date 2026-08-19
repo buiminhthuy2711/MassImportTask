@@ -1,0 +1,20 @@
+<template>
+    <lightning-card title="ベロシティ" icon-name="utility:metrics">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <div class="chart-wrapper">
+                    <canvas lwc:ref="chartCanvas"></canvas>
+                </div>
+                <template if:true={hasData}>
+                    <div class="avg-row">平均ベロシティ: <strong>{averageVelocity}</strong> pts/Sprint</div>
+                </template>
+                <template if:false={hasData}>
+                    <div class="empty-state">Sprintデータがありません</div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

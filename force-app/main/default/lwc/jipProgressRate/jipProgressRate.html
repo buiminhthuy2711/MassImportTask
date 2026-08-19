@@ -1,0 +1,32 @@
+<template>
+    <lightning-card title="進捗率" icon-name="utility:trending">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <div class="kpi-container">
+                    <div class="progress-circle-wrapper">
+                        <div class="progress-circle" style={circleStyle}>
+                            <span class="progress-text">{progressPercent}%</span>
+                        </div>
+                    </div>
+                    <div class="kpi-details">
+                        <div class="kpi-row">
+                            <span class="kpi-label">完了タスク</span>
+                            <span class="kpi-value kpi-completed">{completed}</span>
+                        </div>
+                        <div class="kpi-row">
+                            <span class="kpi-label">全タスク</span>
+                            <span class="kpi-value">{total}</span>
+                        </div>
+                        <div class="kpi-row">
+                            <span class="kpi-label">残タスク</span>
+                            <span class="kpi-value kpi-remaining">{remaining}</span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

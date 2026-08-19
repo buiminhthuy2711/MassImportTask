@@ -1,0 +1,23 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRAttendanceController"
+  contentType="text/csv#AttendanceReport.csv"
+  cache="true"
+>
+  <apex:outputText escape="false"
+    value="Employee Name,Department,Check In,Check Out,Working Hours,Overtime,Status&#10;"
+  />
+  <apex:repeat value="{!attendanceList}" var="att">
+    <apex:outputText escape="false"
+      value="&quot;{!att.employeeName}&quot;,&quot;{!att.departmentName}&quot;,&quot;{!att.checkInTime}&quot;,&quot;{!att.checkOutTime}&quot;,&quot;{!att.workingHours}&quot;,&quot;{!att.overtimeHours}&quot;,&quot;{!att.status}&quot;&#10;"
+    />
+  </apex:repeat>
+</apex:page>

@@ -1,0 +1,563 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRSalaryController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Tabs */
+    .hr-tabs {
+      display: flex;
+      gap: 0;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    .hr-tab {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      background: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-light);
+      border-bottom: 3px solid transparent;
+      transition: all 0.15s;
+    }
+    .hr-tab:hover {
+      color: var(--text);
+    }
+    .hr-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Content */
+    .sal-content {
+      padding: 1.5rem;
+    }
+    .sal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 1.5rem;
+    }
+    .sal-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .sal-card-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sal-card-header h2 {
+      font-size: 1rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .sal-card-body {
+      padding: 1.2rem;
+    }
+
+    /* Salary Breakdown */
+    .salary-breakdown {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .salary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .salary-item:last-child {
+      border-bottom: none;
+    }
+    .salary-item.total {
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding-top: 1rem;
+      margin-top: 0.5rem;
+      border-top: 2px solid var(--border);
+      border-bottom: none;
+    }
+    .salary-label {
+      color: var(--text-light);
+    }
+    .salary-value {
+      font-weight: 600;
+    }
+    .salary-value.positive {
+      color: var(--success);
+    }
+    .salary-value.negative {
+      color: var(--danger);
+    }
+
+    /* Evaluation Section */
+    .eval-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .eval-item {
+      text-align: center;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    .eval-score {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .eval-label {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-top: 0.3rem;
+    }
+    .eval-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .eval-bar-track {
+      flex: 1;
+      height: 8px;
+      background: #edf2f7;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .eval-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    /* KPI Table */
+    .kpi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .kpi-table th {
+      background: #f8fafc;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+    }
+    .kpi-table td {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .kpi-progress {
+      width: 100px;
+      height: 6px;
+      background: #edf2f7;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .kpi-progress-fill {
+      height: 100%;
+      background: var(--success);
+      border-radius: 3px;
+    }
+    .kpi-badge {
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .kpi-達成 {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .kpi-進行中 {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .kpi-未達 {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="salary" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['salary_eval_mgmt']}
+            </div>
+            <h1>&#128176; {!T['salary_eval_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <button type="button" class="btn btn-outline">
+              &#128197; {!T['select_period']}
+            </button>
+            <apex:commandButton value="&#128196; {!T['export_report']}"
+              action="{!exportPayslips}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+            />
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="hr-tabs">
+          <apex:commandLink value="{!T['payslip']}"
+            action="{!changeTab}"
+            styleClass="hr-tab {!IF(selectedTab='payslip','active','')}"
+            rerender="mainForm"
+          >
+            <apex:param name="tab" value="payslip" assignTo="{!selectedTab}" />
+          </apex:commandLink>
+          <apex:commandLink value="{!T['evaluation']}"
+            action="{!changeTab}"
+            styleClass="hr-tab {!IF(selectedTab='evaluation','active','')}"
+            rerender="mainForm"
+          >
+            <apex:param name="tab"
+              value="evaluation"
+              assignTo="{!selectedTab}"
+            />
+          </apex:commandLink>
+          <apex:commandLink value="KPI"
+            action="{!changeTab}"
+            styleClass="hr-tab {!IF(selectedTab='kpi','active','')}"
+            rerender="mainForm"
+          >
+            <apex:param name="tab" value="kpi" assignTo="{!selectedTab}" />
+          </apex:commandLink>
+          <apex:commandLink value="{!T['bonus']}"
+            action="{!changeTab}"
+            styleClass="hr-tab {!IF(selectedTab='bonus','active','')}"
+            rerender="mainForm"
+          >
+            <apex:param name="tab" value="bonus" assignTo="{!selectedTab}" />
+          </apex:commandLink>
+        </div>
+
+        <div class="sal-content">
+          <div class="sal-grid">
+            <!-- Salary Breakdown -->
+            <div class="sal-card">
+              <div class="sal-card-header">
+                <h2>&#128176; 給与明細 - 2026年3月</h2>
+                <button type="button" class="btn btn-sm btn-outline">
+                  詳細
+                </button>
+              </div>
+              <div class="sal-card-body">
+                <ul class="salary-breakdown">
+                  <li class="salary-item">
+                    <span class="salary-label">基本給</span>
+                    <span class="salary-value">¥350,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">役職手当</span>
+                    <span class="salary-value positive">+¥50,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">残業手当</span>
+                    <span class="salary-value positive">+¥45,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">通勤手当</span>
+                    <span class="salary-value positive">+¥15,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">健康保険</span>
+                    <span class="salary-value negative">-¥23,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">厚生年金</span>
+                    <span class="salary-value negative">-¥41,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">所得税</span>
+                    <span class="salary-value negative">-¥28,000</span>
+                  </li>
+                  <li class="salary-item">
+                    <span class="salary-label">住民税</span>
+                    <span class="salary-value negative">-¥18,000</span>
+                  </li>
+                  <li class="salary-item total">
+                    <span class="salary-label">手取り額</span>
+                    <span class="salary-value">¥350,000</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Evaluation Summary -->
+            <div class="sal-card">
+              <div class="sal-card-header">
+                <h2>&#127942; 評価サマリー - 2025年度</h2>
+                <button type="button" class="btn btn-sm btn-outline">
+                  履歴
+                </button>
+              </div>
+              <div class="sal-card-body">
+                <div class="eval-grid">
+                  <div class="eval-item">
+                    <div class="eval-score">A</div>
+                    <div class="eval-label">総合評価</div>
+                  </div>
+                  <div class="eval-item">
+                    <div class="eval-score">4.2</div>
+                    <div class="eval-label">上司評価</div>
+                  </div>
+                  <div class="eval-item">
+                    <div class="eval-score">4.5</div>
+                    <div class="eval-label">同僚評価</div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 1.5rem">
+                  <div class="eval-bar">
+                    <span style="width: 80px; font-size: 0.82rem"
+                      >業務遂行</span
+                    >
+                    <div class="eval-bar-track">
+                      <div
+                        class="eval-bar-fill"
+                        style="width: 85%; background: #48bb78"
+                      ></div>
+                    </div>
+                    <span
+                      style="font-weight: 600; width: 40px; text-align: right"
+                      >85%</span
+                    >
+                  </div>
+                  <div class="eval-bar">
+                    <span style="width: 80px; font-size: 0.82rem"
+                      >チームワーク</span
+                    >
+                    <div class="eval-bar-track">
+                      <div
+                        class="eval-bar-fill"
+                        style="width: 90%; background: #4299e1"
+                      ></div>
+                    </div>
+                    <span
+                      style="font-weight: 600; width: 40px; text-align: right"
+                      >90%</span
+                    >
+                  </div>
+                  <div class="eval-bar">
+                    <span style="width: 80px; font-size: 0.82rem"
+                      >リーダーシップ</span
+                    >
+                    <div class="eval-bar-track">
+                      <div
+                        class="eval-bar-fill"
+                        style="width: 75%; background: #9f7aea"
+                      ></div>
+                    </div>
+                    <span
+                      style="font-weight: 600; width: 40px; text-align: right"
+                      >75%</span
+                    >
+                  </div>
+                  <div class="eval-bar">
+                    <span style="width: 80px; font-size: 0.82rem"
+                      >問題解決</span
+                    >
+                    <div class="eval-bar-track">
+                      <div
+                        class="eval-bar-fill"
+                        style="width: 80%; background: #ed8936"
+                      ></div>
+                    </div>
+                    <span
+                      style="font-weight: 600; width: 40px; text-align: right"
+                      >80%</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- KPI Table -->
+            <div class="sal-card" style="grid-column: 1 / -1">
+              <div class="sal-card-header">
+                <h2>&#127919; KPI管理 - Q1 2026</h2>
+                <button type="button" class="btn btn-sm btn-primary">
+                  + KPI追加
+                </button>
+              </div>
+              <div class="sal-card-body" style="padding: 0; overflow-x: auto">
+                <table class="kpi-table">
+                  <thead>
+                    <tr>
+                      <th>KPI名</th>
+                      <th>目標</th>
+                      <th>実績</th>
+                      <th>進捗</th>
+                      <th>ステータス</th>
+                      <th>期限</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>新規顧客獲得</strong></td>
+                      <td>10件</td>
+                      <td>12件</td>
+                      <td>
+                        <div class="kpi-progress">
+                          <div
+                            class="kpi-progress-fill"
+                            style="width: 120%"
+                          ></div>
+                        </div>
+                      </td>
+                      <td><span class="kpi-badge kpi-達成">達成</span></td>
+                      <td>2026/03/31</td>
+                    </tr>
+                    <tr>
+                      <td><strong>売上目標</strong></td>
+                      <td>5,000万円</td>
+                      <td>4,200万円</td>
+                      <td>
+                        <div class="kpi-progress">
+                          <div
+                            class="kpi-progress-fill"
+                            style="width: 84%; background: #ed8936"
+                          ></div>
+                        </div>
+                      </td>
+                      <td><span class="kpi-badge kpi-進行中">進行中</span></td>
+                      <td>2026/03/31</td>
+                    </tr>
+                    <tr>
+                      <td><strong>顧客満足度</strong></td>
+                      <td>95%</td>
+                      <td>92%</td>
+                      <td>
+                        <div class="kpi-progress">
+                          <div
+                            class="kpi-progress-fill"
+                            style="width: 97%; background: #e53e3e"
+                          ></div>
+                        </div>
+                      </td>
+                      <td><span class="kpi-badge kpi-未達">未達</span></td>
+                      <td>2026/03/31</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

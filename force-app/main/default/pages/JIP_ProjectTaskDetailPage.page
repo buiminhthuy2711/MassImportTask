@@ -1,0 +1,1368 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_ProjectTaskDetailController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --green: #2baf6a;
+      --green-dark: #239b5b;
+      --green-darker: #1a7a47;
+      --green-light: #e6f7ee;
+      --orange: #e8833a;
+      --red: #d9534f;
+      --blue: #5b9bd5;
+      --gray: #888;
+      --bg: #f5f5f5;
+      --white: #ffffff;
+      --text: #333;
+      --text-light: #666;
+      --border: #e0e0e0;
+      --yellow-light: #fffde7;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .dt-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-area {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-bar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .breadcrumb-bar a {
+      color: var(--green);
+      text-decoration: none;
+    }
+    .breadcrumb-bar a:hover {
+      text-decoration: underline;
+    }
+
+    /* Task header bar */
+    .task-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .task-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+    .task-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .task-header-bottom {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .type-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      display: inline-block;
+    }
+    .type-基本操作 {
+      background: var(--green);
+    }
+    .type-プロジェクト設定 {
+      background: var(--orange);
+    }
+    .type-バグ {
+      background: var(--red);
+    }
+    .type-要望 {
+      background: var(--blue);
+    }
+    .type-タスク {
+      background: #8e6fc0;
+    }
+    .type-その他 {
+      background: var(--gray);
+    }
+
+    .task-key {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .task-subject {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: var(--text);
+    }
+
+    .date-info {
+      font-size: 0.82rem;
+      color: var(--text-light);
+    }
+    .date-label {
+      color: var(--text-light);
+      margin-right: 2px;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+      display: inline-block;
+    }
+    .st-未対応 {
+      background: #ff6666;
+    }
+    .st-処理中 {
+      background: #4db87e;
+    }
+    .st-処理済み {
+      background: #5599dd;
+    }
+    .st-完了 {
+      background: #aaa;
+    }
+
+    /* Action buttons */
+    .action-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--white);
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: background 0.15s;
+      color: var(--text);
+    }
+    .action-btn:hover {
+      background: #f0f0f0;
+    }
+    .action-btn-danger {
+      color: var(--red);
+      border-color: var(--red);
+    }
+    .action-btn-danger:hover {
+      background: #fff0f0;
+    }
+    .action-btn-primary {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+    .action-btn-primary:hover {
+      background: var(--green-dark);
+    }
+
+    /* Content layout */
+    .content-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .content-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.2rem 1.5rem;
+      min-width: 0;
+    }
+
+    /* Task title */
+    .task-title {
+      font-size: 1.3rem !important;
+      font-weight: 700 !important;
+      margin: 0 0 1rem 0 !important;
+      color: var(--text) !important;
+      line-height: 1.5 !important;
+    }
+
+    /* Description card */
+    .desc-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 1.2rem;
+      overflow: hidden;
+    }
+    .desc-header {
+      padding: 0.7rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar-green {
+      background: var(--green);
+    }
+    .avatar-gray {
+      background: var(--gray);
+    }
+    .desc-meta {
+      font-size: 0.82rem;
+    }
+    .desc-meta .name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .desc-meta .date {
+      color: var(--text-light);
+      margin-left: 0.5rem;
+    }
+    .desc-body {
+      padding: 1rem;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Metadata grid */
+    .meta-grid {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 1.2rem;
+      overflow: hidden;
+    }
+    .meta-row {
+      display: flex;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .meta-row:last-child {
+      border-bottom: none;
+    }
+    .meta-cell {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      min-height: 38px;
+    }
+    .meta-cell + .meta-cell {
+      border-left: 1px solid #f0f0f0;
+    }
+    .meta-label {
+      color: var(--text-light);
+      min-width: 80px;
+      flex-shrink: 0;
+    }
+    .meta-value {
+      font-weight: 500;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .priority-icon {
+      font-size: 1rem;
+    }
+    .pri-高 {
+      color: #d32f2f;
+    }
+    .pri-中 {
+      color: #ff9800;
+    }
+    .pri-低 {
+      color: #4caf50;
+    }
+
+    /* Comment section */
+    .comment-section {
+      margin-top: 0.5rem;
+    }
+    .comment-section h3 {
+      font-size: 0.95rem;
+      margin: 0 0 0.8rem 0;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .comment-list {
+      margin-bottom: 1rem;
+    }
+    .comment-item {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 0.6rem;
+      overflow: hidden;
+    }
+    .comment-item-header {
+      padding: 0.5rem 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fafafa;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .comment-item-header .avatar {
+      width: 26px;
+      height: 26px;
+      font-size: 0.7rem;
+    }
+    .comment-item-body {
+      padding: 0.7rem 0.8rem;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .comment-edit-link {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--green);
+      cursor: pointer;
+    }
+    .comment-edit-link:hover {
+      text-decoration: underline;
+    }
+    .comment-notified {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.78rem;
+      color: var(--text-light);
+      background: var(--bg-light);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .notified-icon {
+      font-size: 0.85rem;
+    }
+    .notified-label {
+      font-weight: 600;
+    }
+    .notified-names {
+      color: var(--text);
+    }
+    .comment-edit-form {
+      padding: 0.7rem 0.8rem;
+    }
+    .comment-edit-textarea {
+      width: 100%;
+      min-height: 80px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+    .comment-edit-actions {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+    .action-btn-sm {
+      padding: 0.3rem 0.8rem !important;
+      font-size: 0.8rem !important;
+    }
+
+    /* Comment form */
+    .comment-form {
+      background: var(--yellow-light);
+      border: 1px solid #e6d88a;
+      border-radius: 6px;
+      padding: 0;
+      overflow: hidden;
+    }
+    .comment-textarea {
+      width: 100%;
+      min-height: 100px;
+      border: none;
+      padding: 0.8rem;
+      font-family: inherit;
+      font-size: 0.88rem;
+      resize: vertical;
+      background: transparent;
+      outline: none;
+    }
+    .comment-form-footer {
+      padding: 0.5rem 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #e6d88a;
+    }
+    .comment-hint {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .comment-notify-section {
+      padding: 0.6rem 0.8rem;
+      border-top: 1px solid #e6d88a;
+      position: relative;
+    }
+    .notify-input-wrap {
+      position: relative;
+      margin-top: 0.4rem;
+    }
+    .notify-input {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .notify-input:focus {
+      border-color: var(--green);
+    }
+    .notify-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .notify-dropdown.show {
+      display: block;
+    }
+    .notify-dropdown-item {
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .notify-dropdown-item:hover {
+      background: var(--bg-light);
+    }
+    .notify-dropdown-item .avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 0.6rem;
+    }
+    .selected-members {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.4rem;
+    }
+    .selected-member-tag {
+      background: var(--green-light);
+      color: var(--green-dark);
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .selected-member-tag .remove-btn {
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 0.2rem;
+    }
+    .selected-member-tag .remove-btn:hover {
+      color: #c00;
+    }
+
+    /* Right sidebar */
+    .sb-section {
+      margin-bottom: 1rem;
+    }
+    .sb-section-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 0.3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sb-section-title a {
+      font-size: 0.78rem;
+      color: var(--green);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .sb-section-title a:hover {
+      text-decoration: underline;
+    }
+    .sb-value {
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .sb-value select,
+    .sb-value input {
+      width: 100%;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .sb-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.3rem;
+    }
+    .dot-未対応 {
+      background: #ff6666;
+    }
+    .dot-処理中 {
+      background: #4db87e;
+    }
+    .dot-処理済み {
+      background: #5599dd;
+    }
+    .dot-完了 {
+      background: #aaa;
+    }
+
+    .sb-assignee {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .sb-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0.8rem 0;
+    }
+    .sb-save-row {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Messages */
+    .dt-messages {
+      margin-bottom: 0.8rem;
+    }
+
+    /* Edit mode */
+    .edit-field {
+      margin-bottom: 0.6rem;
+    }
+    .edit-field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      margin-bottom: 0.15rem;
+    }
+    .edit-field input,
+    .edit-field select,
+    .edit-field textarea {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.88rem;
+      font-family: inherit;
+    }
+    .edit-field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .edit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+    .edit-full {
+      grid-column: 1 / -1;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="dt-wrap">
+      <!-- LEFT SIDEBAR -->
+      <c:JIP_ProjectSidebar projectId="{!projectId}"
+        projectName="{!projectName}"
+        activePage="task"
+      />
+
+      <!-- MAIN AREA -->
+      <div class="main-area">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-bar">
+          <apex:commandLink value="&#x2190; 課題一覧に戻る"
+            action="{!goBackToList}"
+            style="color: #2baf6a; text-decoration: none"
+          />
+        </div>
+
+        <!-- ===== CREATE MODE ===== -->
+        <apex:outputPanel rendered="{!isCreateMode}">
+          <div class="task-header">
+            <div class="task-header-left">
+              <span
+                style="font-weight: 700; font-size: 1rem; color: var(--text)"
+                >課題の追加</span
+              >
+            </div>
+          </div>
+          <div class="content-layout">
+            <div class="content-main">
+              <div class="dt-messages">
+                <apex:messages layout="list" />
+              </div>
+              <div class="desc-card" style="padding: 1.2rem">
+                <div class="edit-grid">
+                  <div class="edit-field edit-full">
+                    <label>件名 *</label>
+                    <apex:inputField value="{!task.Subject__c}"
+                      style="
+                        width: 100%;
+                        padding: 0.4rem 0.6rem;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 4px;
+                      "
+                    />
+                  </div>
+                  <div class="edit-field">
+                    <label>種別</label>
+                    <apex:inputField value="{!task.TaskType__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>状態</label>
+                    <apex:inputField value="{!task.Status__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>担当者</label>
+                    <apex:inputField value="{!task.Assignee__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>優先度</label>
+                    <apex:inputField value="{!task.Priority__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>カテゴリー</label>
+                    <apex:inputField value="{!task.Category__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>マイルストーン</label>
+                    <apex:inputField value="{!task.Milestone__c}"
+                      style="
+                        width: 100%;
+                        padding: 0.4rem 0.6rem;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 4px;
+                      "
+                    />
+                  </div>
+                  <div class="edit-field">
+                    <label>開始日</label>
+                    <apex:inputField value="{!task.StartDate__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>期限日</label>
+                    <apex:inputField value="{!task.DueDate__c}" />
+                  </div>
+                  <div class="edit-field">
+                    <label>予定時間</label>
+                    <apex:inputField value="{!task.EstimatedHours__c}"
+                      style="
+                        width: 100%;
+                        padding: 0.4rem 0.6rem;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 4px;
+                      "
+                    />
+                  </div>
+                  <div class="edit-field">
+                    <label>実績時間</label>
+                    <apex:inputField value="{!task.ActualHours__c}"
+                      style="
+                        width: 100%;
+                        padding: 0.4rem 0.6rem;
+                        border: 1px solid #e0e0e0;
+                        border-radius: 4px;
+                      "
+                    />
+                  </div>
+                  <div class="edit-field edit-full">
+                    <label>詳細</label>
+                    <apex:inputField value="{!task.Description__c}"
+                      style="width: 100%; min-height: 200px"
+                    />
+                  </div>
+                </div>
+                <div
+                  style="
+                    display: flex;
+                    gap: 0.5rem;
+                    margin-top: 1rem;
+                    justify-content: flex-end;
+                  "
+                >
+                  <apex:commandButton value="キャンセル"
+                    action="{!cancelCreateRedirect}"
+                    styleClass="action-btn"
+                  />
+                  <apex:commandButton value="登録"
+                    action="{!saveCreate}"
+                    styleClass="action-btn action-btn-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel>
+
+        <!-- ===== VIEW/EDIT MODE ===== -->
+        <apex:outputPanel rendered="{!task != null && !isCreateMode}">
+          <!-- Task header -->
+          <div class="task-header">
+            <div class="task-header-left">
+              <span class="type-badge type-{!task.TaskType__c}"
+                >{!task.TaskType__c}</span
+              >
+              <span class="task-key">{!task.Name}</span>
+              <span class="date-info">
+                <span class="date-label">開始日</span>
+                <apex:outputText value="{0,date,yyyy/MM/dd}"
+                  rendered="{!task.StartDate__c != null}"
+                >
+                  <apex:param value="{!task.StartDate__c}" />
+                </apex:outputText>
+              </span>
+              <span class="date-info">
+                <span class="date-label">期限日</span>
+                <apex:outputText value="{0,date,yyyy/MM/dd}"
+                  rendered="{!task.DueDate__c != null}"
+                >
+                  <apex:param value="{!task.DueDate__c}" />
+                </apex:outputText>
+              </span>
+              <span class="status-badge st-{!task.Status__c}"
+                >{!task.Status__c}</span
+              >
+            </div>
+            <div class="task-header-right">
+              <apex:commandButton value="編集"
+                action="{!toggleEdit}"
+                styleClass="action-btn"
+              />
+              <apex:commandButton value="削除"
+                action="{!deleteTask}"
+                styleClass="action-btn action-btn-danger"
+                onclick="
+                  if (!confirm('この課題を削除しますか？')) {
+                    return false;
+                  }
+                "
+              />
+            </div>
+            <div class="task-header-bottom">
+              <span class="task-subject">{!task.Subject__c}</span>
+            </div>
+          </div>
+
+          <!-- Content layout -->
+          <div class="content-layout">
+            <!-- Main content -->
+            <div class="content-main">
+              <!-- Messages -->
+              <div class="dt-messages">
+                <apex:messages layout="list" />
+              </div>
+
+              <!-- EDIT MODE -->
+              <apex:outputPanel rendered="{!isEditing}">
+                <div class="desc-card" style="padding: 1.2rem">
+                  <div class="edit-grid">
+                    <div class="edit-field edit-full">
+                      <label>件名 *</label>
+                      <apex:inputField value="{!task.Subject__c}"
+                        style="
+                          width: 100%;
+                          padding: 0.4rem 0.6rem;
+                          border: 1px solid #e0e0e0;
+                          border-radius: 4px;
+                        "
+                      />
+                    </div>
+                    <div class="edit-field">
+                      <label>種別</label>
+                      <apex:inputField value="{!task.TaskType__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>状態</label>
+                      <apex:inputField value="{!task.Status__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>担当者</label>
+                      <apex:inputField value="{!task.Assignee__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>優先度</label>
+                      <apex:inputField value="{!task.Priority__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>カテゴリー</label>
+                      <apex:inputField value="{!task.Category__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>マイルストーン</label>
+                      <apex:inputField value="{!task.Milestone__c}"
+                        style="
+                          width: 100%;
+                          padding: 0.4rem 0.6rem;
+                          border: 1px solid #e0e0e0;
+                          border-radius: 4px;
+                        "
+                      />
+                    </div>
+                    <div class="edit-field">
+                      <label>開始日</label>
+                      <apex:inputField value="{!task.StartDate__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>期限日</label>
+                      <apex:inputField value="{!task.DueDate__c}" />
+                    </div>
+                    <div class="edit-field">
+                      <label>予定時間</label>
+                      <apex:inputField value="{!task.EstimatedHours__c}"
+                        style="
+                          width: 100%;
+                          padding: 0.4rem 0.6rem;
+                          border: 1px solid #e0e0e0;
+                          border-radius: 4px;
+                        "
+                      />
+                    </div>
+                    <div class="edit-field">
+                      <label>実績時間</label>
+                      <apex:inputField value="{!task.ActualHours__c}"
+                        style="
+                          width: 100%;
+                          padding: 0.4rem 0.6rem;
+                          border: 1px solid #e0e0e0;
+                          border-radius: 4px;
+                        "
+                      />
+                    </div>
+                    <div class="edit-field edit-full">
+                      <label>詳細</label>
+                      <apex:inputField value="{!task.Description__c}"
+                        style="width: 100%; min-height: 200px"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      gap: 0.5rem;
+                      margin-top: 1rem;
+                      justify-content: flex-end;
+                    "
+                  >
+                    <apex:commandButton value="キャンセル"
+                      action="{!cancelEdit}"
+                      styleClass="action-btn"
+                    />
+                    <apex:commandButton value="更新"
+                      action="{!saveFullEdit}"
+                      styleClass="action-btn action-btn-primary"
+                    />
+                  </div>
+                </div>
+              </apex:outputPanel>
+
+              <!-- VIEW MODE -->
+              <apex:outputPanel rendered="{!NOT(isEditing)}">
+                <!-- Title -->
+                <!-- <h1 class="task-title">{!task.Subject__c}</h1> -->
+
+                <!-- Description card -->
+                <div class="desc-card">
+                  <div class="desc-header">
+                    <span class="avatar avatar-green"
+                      >{!registeredByInitial}</span
+                    >
+                    <div class="desc-meta">
+                      <span class="name">{!task.RegisteredBy__c}</span>
+                      <span class="date">
+                        登録日
+                        <apex:outputText value="{0,date,yyyy/MM/dd HH:mm:ss}">
+                          <apex:param value="{!task.CreatedDate}" />
+                        </apex:outputText>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="desc-body">
+                    <apex:outputPanel rendered="{!task.Description__c != null}">
+                      <apex:outputText value="{!task.Description__c}"
+                        escape="false"
+                      />
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!task.Description__c == null}">
+                      <span style="color: #999; font-style: italic"
+                        >詳細はありません</span
+                      >
+                    </apex:outputPanel>
+                  </div>
+                </div>
+
+                <!-- Metadata grid (editable) -->
+                <div class="meta-grid">
+                  <div class="meta-row">
+                    <div class="meta-cell">
+                      <span class="meta-label">状態</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:selectList value="{!editStatus}"
+                          size="1"
+                          multiselect="false"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                        >
+                          <apex:selectOptions value="{!statusOptions}" />
+                        </apex:selectList>
+                      </span>
+                    </div>
+                    <div class="meta-cell">
+                      <span class="meta-label">担当者</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:selectList value="{!editAssignee}"
+                          size="1"
+                          multiselect="false"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                        >
+                          <apex:selectOptions value="{!assigneeOptions}" />
+                        </apex:selectList>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="meta-row">
+                    <div class="meta-cell">
+                      <span class="meta-label">開始日</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:inputField value="{!task.StartDate__c}"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                        />
+                      </span>
+                    </div>
+                    <div class="meta-cell">
+                      <span class="meta-label">期限日</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:inputField value="{!task.DueDate__c}"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                        />
+                      </span>
+                    </div>
+                  </div>
+                  <div class="meta-row">
+                    <div class="meta-cell">
+                      <span class="meta-label">カテゴリー</span>
+                      <span class="meta-value">{!task.Category__c}</span>
+                    </div>
+                    <div class="meta-cell">
+                      <span class="meta-label">マイルストーン</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:inputText value="{!editMilestone}"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                          html-placeholder="マイルストーン"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                  <div class="meta-row">
+                    <div class="meta-cell">
+                      <span class="meta-label">予定時間</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:input value="{!editEstimatedHours}"
+                          type="number"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                          html-step="0.5"
+                          html-min="0"
+                        />
+                      </span>
+                    </div>
+                    <div class="meta-cell">
+                      <span class="meta-label">実績時間</span>
+                      <span class="meta-value" style="flex: 1">
+                        <apex:input value="{!editActualHours}"
+                          type="number"
+                          style="
+                            width: 100%;
+                            padding: 0.3rem;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 4px;
+                          "
+                          html-step="0.5"
+                          html-min="0"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    class="meta-row"
+                    style="justify-content: flex-end; padding: 0.6rem 1rem"
+                  >
+                    <apex:commandButton value="保存"
+                      action="{!saveQuickEdit}"
+                      reRender="mainForm"
+                      styleClass="action-btn action-btn-primary"
+                    />
+                  </div>
+                </div>
+
+                <!-- Comments section -->
+                <div class="comment-section">
+                  <h3>コメント ({!comments.size})</h3>
+
+                  <!-- Existing comments -->
+                  <div class="comment-list">
+                    <apex:repeat value="{!comments}" var="c">
+                      <div class="comment-item">
+                        <div class="comment-item-header">
+                          <span
+                            class="avatar avatar-green"
+                            style="
+                              width: 26px;
+                              height: 26px;
+                              font-size: 0.65rem;
+                            "
+                          >
+                            {!LEFT(IF(c.CommentBy__c != null, c.CommentBy__c,
+                            '?'), 1)}
+                          </span>
+                          <div class="desc-meta">
+                            <span class="name">{!c.CommentBy__c}</span>
+                            <span class="date">
+                              <apex:outputText value="{0,date,yyyy/MM/dd HH:mm:ss}"
+                              >
+                                <apex:param value="{!c.CreatedDate}" />
+                              </apex:outputText>
+                            </span>
+                          </div>
+                          <!-- Edit button for comment owner -->
+                          <apex:commandLink value="編集"
+                            action="{!startEditComment}"
+                            reRender="mainForm"
+                            styleClass="comment-edit-link"
+                            rendered="{!c.CommentBy__c == currentUserName && editingCommentId != c.Id}"
+                          >
+                            <apex:param name="commentId"
+                              value="{!c.Id}"
+                              assignTo="{!editingCommentId}"
+                            />
+                          </apex:commandLink>
+                        </div>
+                        <!-- View mode -->
+                        <apex:outputPanel rendered="{!editingCommentId != c.Id}"
+                        >
+                          <div class="comment-item-body">
+                            {!c.CommentBody__c}
+                          </div>
+                          <!-- Notified members -->
+                          <apex:outputPanel rendered="{!c.NotifiedMembers__c != null && c.NotifiedMembers__c != ''}"
+                          >
+                            <div class="comment-notified">
+                              <span class="notified-icon">📢</span>
+                              <span class="notified-label"></span>
+                              <span class="notified-names"
+                                >{!c.NotifiedMembers__c}</span
+                              >
+                            </div>
+                          </apex:outputPanel>
+                        </apex:outputPanel>
+                        <!-- Edit mode -->
+                        <apex:outputPanel rendered="{!editingCommentId == c.Id}"
+                        >
+                          <div class="comment-edit-form">
+                            <apex:inputTextarea value="{!editCommentBody}"
+                              styleClass="comment-edit-textarea"
+                            />
+                            <div class="comment-edit-actions">
+                              <apex:commandButton value="保存"
+                                action="{!saveEditComment}"
+                                reRender="mainForm"
+                                styleClass="action-btn action-btn-primary action-btn-sm"
+                              />
+                              <apex:commandButton value="キャンセル"
+                                action="{!cancelEditComment}"
+                                reRender="mainForm"
+                                styleClass="action-btn action-btn-sm"
+                              />
+                            </div>
+                          </div>
+                        </apex:outputPanel>
+                      </div>
+                    </apex:repeat>
+                  </div>
+
+                  <!-- Add comment form -->
+                  <div class="comment-form">
+                    <apex:inputField value="{!newCommentObj.CommentBody__c}"
+                      styleClass="comment-textarea"
+                      html-placeholder="コメント"
+                    />
+                    <div class="comment-notify-section">
+                      <span class="comment-hint"
+                        >コメントをお知らせしたいユーザー:</span
+                      >
+                      <div class="notify-input-wrap">
+                        <input
+                          type="text"
+                          class="notify-input"
+                          id="notifyInput"
+                          placeholder="ユーザー名を入力..."
+                          autocomplete="off"
+                        />
+                        <div class="notify-dropdown" id="notifyDropdown">
+                          <apex:repeat value="{!notifyMemberOptions}" var="m">
+                            <div
+                              class="notify-dropdown-item"
+                              data-id="{!m.value}"
+                              data-name="{!m.label}"
+                              onclick="selectMember(this)"
+                            >
+                              <span class="avatar avatar-green"
+                                >{!LEFT(m.label, 1)}</span
+                              >
+                              <span>{!m.label}</span>
+                            </div>
+                          </apex:repeat>
+                        </div>
+                      </div>
+                      <div class="selected-members" id="selectedMembers"></div>
+                      <apex:inputHidden value="{!selectedMembersToNotify}"
+                        id="hiddenMembers"
+                      />
+                    </div>
+                    <div class="comment-form-footer">
+                      <apex:commandButton value="登録"
+                        action="{!addComment}"
+                        reRender="mainForm"
+                        styleClass="action-btn action-btn-primary"
+                        onclick="prepareSelectedMembers()"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </apex:outputPanel>
+            </div>
+          </div>
+        </apex:outputPanel>
+
+        <!-- Task not found -->
+        <apex:outputPanel rendered="{!task == null && !isCreateMode}">
+          <div style="padding: 3rem; text-align: center; color: #999">
+            課題が見つかりません。
+            <br /><br />
+            <apex:commandLink value="&#x2190; 課題一覧に戻る"
+              action="{!goBackToList}"
+              style="color: #2baf6a"
+            />
+          </div>
+        </apex:outputPanel>
+      </div>
+    </div>
+  </apex:form>
+
+  <script>
+    var selectedMembers = [];
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var input = document.getElementById("notifyInput");
+      var dropdown = document.getElementById("notifyDropdown");
+
+      if (input && dropdown) {
+        // Show dropdown on focus
+        input.addEventListener("focus", function () {
+          dropdown.classList.add("show");
+          filterDropdown();
+        });
+
+        // Filter dropdown on input
+        input.addEventListener("input", function () {
+          filterDropdown();
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function (e) {
+          if (!e.target.closest(".notify-input-wrap")) {
+            dropdown.classList.remove("show");
+          }
+        });
+      }
+    });
+
+    function filterDropdown() {
+      var input = document.getElementById("notifyInput");
+      var dropdown = document.getElementById("notifyDropdown");
+      var filter = input.value.toLowerCase();
+      var items = dropdown.querySelectorAll(".notify-dropdown-item");
+
+      items.forEach(function (item) {
+        var name = item.getAttribute("data-name").toLowerCase();
+        var id = item.getAttribute("data-id");
+        var isSelected = selectedMembers.some(function (m) {
+          return m.id === id;
+        });
+
+        if (name.indexOf(filter) > -1 && !isSelected) {
+          item.style.display = "flex";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+
+    function selectMember(el) {
+      var id = el.getAttribute("data-id");
+      var name = el.getAttribute("data-name");
+
+      // Check if already selected
+      if (
+        selectedMembers.some(function (m) {
+          return m.id === id;
+        })
+      ) {
+        return;
+      }
+
+      selectedMembers.push({ id: id, name: name });
+      renderSelectedMembers();
+
+      // Clear input and hide dropdown
+      var input = document.getElementById("notifyInput");
+      input.value = "";
+      document.getElementById("notifyDropdown").classList.remove("show");
+    }
+
+    function removeMember(id) {
+      selectedMembers = selectedMembers.filter(function (m) {
+        return m.id !== id;
+      });
+      renderSelectedMembers();
+    }
+
+    function renderSelectedMembers() {
+      var container = document.getElementById("selectedMembers");
+      container.innerHTML = "";
+
+      selectedMembers.forEach(function (m) {
+        var tag = document.createElement("span");
+        tag.className = "selected-member-tag";
+        tag.innerHTML =
+          m.name +
+          ' <span class="remove-btn" onclick="removeMember(\'' +
+          m.id +
+          "')\">&times;</span>";
+        container.appendChild(tag);
+      });
+    }
+
+    function prepareSelectedMembers() {
+      var hiddenInput = document.querySelector('[id$="hiddenMembers"]');
+      if (hiddenInput) {
+        var ids = selectedMembers.map(function (m) {
+          return m.id;
+        });
+        hiddenInput.value = ids.join(",");
+      }
+      return true;
+    }
+  </script>
+</apex:page>

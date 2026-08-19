@@ -1,0 +1,569 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_AttendanceManagementController" lightningStylesheets="true" docType="html-5.0">
+    <apex:slds />
+
+    <style>
+        :root {
+            --teal: #20b2aa;
+            --teal-dark: #1a9690;
+            --teal-light: #4dd9d0;
+            --coral: #d9534f;
+            --bg: #f3f3f3;
+            --white: #ffffff;
+            --text: #181818;
+            --text-light: #555;
+            --border: #ddd;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .att-wrap {
+            max-width: 1260px; margin: 1.5rem auto;
+            font-family: 'Salesforce Sans','Meiryo','Yu Gothic',sans-serif;
+            font-size: 0.92rem;
+        }
+        /* Header */
+        .att-page-header {
+            background: var(--white); border-bottom: 3px solid var(--teal);
+            padding: 1rem 1.5rem; border-radius: 8px 8px 0 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .att-page-header h1 {
+            font-size: 1.35rem; color: var(--coral); font-weight: 800; margin: 0;
+        }
+        .att-page-header .page-subtitle {
+            font-size: 0.82rem; color: var(--text-light);
+        }
+        /* Top bar */
+        .att-topbar {
+            background: #f7f7f7; border: 1px solid var(--border);
+            padding: 0.8rem 1.5rem; display: flex; align-items: center;
+            gap: 1.5rem; flex-wrap: wrap;
+        }
+        .date-nav { display: flex; align-items: center; gap: 0.5rem; }
+        .date-nav .nav-btn {
+            background: var(--teal); color: #fff; border: none; border-radius: 4px;
+            width: 32px; height: 32px; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .date-nav .nav-btn:hover { background: var(--teal-dark); }
+        .date-nav .date-label {
+            font-size: 1.1rem; font-weight: 700; min-width: 200px; text-align: center;
+        }
+        .worker-info { display: flex; align-items: center; gap: 0.5rem; }
+        .worker-info select {
+            padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+            border-radius: 4px; font-size: 0.9rem; min-width: 250px;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem; border-radius: 12px;
+            font-weight: 700; font-size: 0.82rem;
+        }
+        .status-未入力 { background: #e0e0e0; color: #666; }
+        .status-出勤 { background: #e8f5e9; color: #2e7d32; }
+        .status-出勤中 { background: #c8e6c9; color: #1b5e20; }
+        .status-退勤済 { background: #e3f2fd; color: #1565c0; }
+        .status-欠勤 { background: #ffeaea; color: #c62828; }
+        .status-有給休暇 { background: #fff3e0; color: #e65100; }
+        .status-遅刻 { background: #fff8e1; color: #f57f17; }
+        .status-早退 { background: #fce4ec; color: #c2185b; }
+        .status-入力済 { background: #e8eaf6; color: #283593; }
+        /* Action buttons bar */
+        .action-bar {
+            background: #fafafa; border: 1px solid var(--border); border-top: none;
+            padding: 0.6rem 1.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;
+        }
+        .btn { padding: 0.4rem 1.2rem; border: none; border-radius: 4px;
+            font-size: 0.88rem; cursor: pointer; font-weight: 600; transition: all 0.15s; }
+        .btn-save { background: var(--teal); color: #fff; }
+        .btn-save:hover { background: var(--teal-dark); }
+        .btn-save::before { content: '\1F4BE\00a0'; }
+        .btn-draft { background: #5bc0de; color: #fff; }
+        .btn-draft:hover { background: #46b8da; }
+        .btn-draft::before { content: '\1F4DD\00a0'; }
+        .btn-clear { background: #6c757d; color: #fff; }
+        .btn-clear:hover { background: #5a6268; }
+        .btn-clear::before { content: '\1F504\00a0'; }
+        .btn-delete { background: #aaa; color: #fff; }
+        .btn-delete:hover { background: #888; }
+        .btn-delete::before { content: '\1F5D1\00a0'; }
+
+        /* Body = 2 columns */
+        .att-body {
+            background: var(--white); border: 1px solid var(--border); border-top: none;
+            border-radius: 0 0 8px 8px; padding: 1.25rem 1.5rem;
+        }
+        .att-messages { margin-bottom: 0.75rem; }
+        .two-col { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .col-left { flex: 0 0 46%; min-width: 400px; }
+        .col-right { flex: 1; min-width: 380px; }
+
+        /* Sections */
+        .section { margin-bottom: 1.25rem; }
+        .section-title {
+            font-size: 0.95rem; font-weight: 700; color: var(--teal-dark);
+            margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.3rem;
+        }
+        .section-title .icon { color: var(--teal); }
+
+        /* Calendar */
+        .cal-container { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+        .cal-nav { background: var(--teal); color: #fff; padding: 0.4rem;
+            display: flex; justify-content: center; align-items: center; gap: 0.6rem;
+            font-size: 0.9rem; font-weight: 600; }
+        .cal-nav-btn { cursor: pointer; padding: 2px 8px; border-radius: 3px;
+            transition: background 0.15s; user-select: none; }
+        .cal-nav-btn:hover { background: rgba(255,255,255,0.2); }
+        .cal-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .cal-table th { padding: 4px; text-align: center; font-weight: 600;
+            background: #f0fafa; color: var(--text); border-bottom: 1px solid var(--border); }
+        .cal-table td { padding: 4px; text-align: center; cursor: pointer;
+            transition: background 0.1s; }
+        .cal-table td:hover { background: #e0f7fa; }
+        .cal-day { border-radius: 4px; display: inline-block; width: 26px; height: 26px;
+            line-height: 26px; }
+        .cal-today { background: #b2ebf2; font-weight: 700; }
+        .cal-selected { background: var(--teal) !important; color: #fff !important; font-weight: 700; }
+        .cal-has-record { background: #c8e6c9; }
+        .cal-has-record.cal-selected { background: var(--teal) !important; }
+        .cal-sun { color: #d32f2f; }
+        .cal-sat { color: #1565c0; }
+        .cal-empty { cursor: default; }
+        .cal-empty:hover { background: transparent; }
+
+        /* Monthly summary table */
+        .summary-tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .summary-tbl td { padding: 0.35rem 0.5rem; border: 1px solid #eee; }
+        .summary-tbl .lbl { background: #f5fafa; color: var(--text-light); width: 35%; white-space: nowrap; }
+        .summary-tbl .val { font-weight: 700; text-align: right; width: 15%; }
+
+        /* Daily info grid */
+        .daily-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; font-size: 0.85rem;
+            border: 1px solid #eee; border-radius: 6px; overflow: hidden; }
+        .daily-item { padding: 0.4rem 0.6rem; display: flex; justify-content: space-between;
+            border-bottom: 1px solid #f0f0f0; }
+        .daily-item:nth-child(odd) { border-right: 1px solid #f0f0f0; }
+        .daily-label { color: var(--text-light); }
+        .daily-value { font-weight: 700; }
+
+        /* Timeline bar */
+        .timeline-wrap { margin-top: 0.5rem; }
+        .timeline-labels { display: flex; justify-content: space-between;
+            font-size: 0.7rem; color: #999; padding: 0 2px; }
+        .timeline-bar { position: relative; height: 24px; background: #f0f0f0;
+            border-radius: 4px; overflow: hidden; margin-top: 2px; }
+        .tl-work { position: absolute; top: 0; height: 100%;
+            background: linear-gradient(135deg, #7c4dff, #536dfe); border-radius: 3px; }
+        .tl-break { position: absolute; top: 0; height: 100%;
+            background: #66bb6a; border-radius: 2px; }
+
+        /* Right column form */
+        .form-group { margin-bottom: 0.75rem; }
+        .form-label { font-size: 0.82rem; color: var(--text-light); margin-bottom: 0.2rem; font-weight: 600; }
+        .form-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .form-input {
+            padding: 0.4rem 0.6rem; border: 1px solid var(--border);
+            border-radius: 4px; font-size: 0.9rem;
+        }
+        .form-input-sm { width: 80px; }
+        .form-input-md { width: 120px; }
+        .btn-punch {
+            background: #ff9800; color: #fff; border: none; border-radius: 4px;
+            padding: 0.35rem 0.7rem; font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn-punch::before { content: '\23F0\00a0'; }
+        .btn-punch:hover { background: #f57c00; }
+
+        /* Break detail table */
+        .break-tbl { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .break-tbl th { background: var(--teal); color: #fff; padding: 0.3rem 0.5rem;
+            font-weight: 600; text-align: center; }
+        .break-tbl td { padding: 0.3rem 0.5rem; border: 1px solid #eee; text-align: center; }
+
+        /* Comment */
+        .comment-area {
+            width: 100%; min-height: 80px; border: 1px solid var(--border);
+            border-radius: 4px; padding: 0.5rem; font-size: 0.9rem; resize: vertical;
+            font-family: inherit;
+        }
+
+        /* Bottom buttons (same as top) */
+        .bottom-actions { margin-top: 1rem; padding-top: 1rem;
+            border-top: 1px solid #eee; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+        @media (max-width: 900px) {
+            .col-left, .col-right { flex: 1 1 100%; min-width: 0; }
+        }
+    </style>
+
+    <!-- JS functions (outside form, persist on reRender) -->
+    <script>
+        function renderCalendar(year, month, calData, selectedDateStr) {
+            var container = document.getElementById('calendarContainer');
+            if (!container) return;
+
+            var firstDay = new Date(year, month - 1, 1);
+            var daysInMonth = new Date(year, month, 0).getDate();
+            var startDow = firstDay.getDay();
+            var today = new Date();
+            var todayStr = today.getFullYear() + '-' +
+                String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                String(today.getDate()).padStart(2, '0');
+
+            var html = '<div class="cal-nav">';
+            html += '<span class="cal-nav-btn" onclick="calNav(\'prevMonth\')">&#x226A;</span>';
+            html += '<span class="cal-nav-btn" onclick="calNav(\'prevMonth\')">&#x25C0;</span>';
+            html += ' ' + year + '年' + String(month).padStart(2, '0') + '月 ';
+            html += '<span class="cal-nav-btn" onclick="calNav(\'nextMonth\')">&#x25B6;</span>';
+            html += '<span class="cal-nav-btn" onclick="calNav(\'nextMonth\')">&#x226B;</span>';
+            html += '</div>';
+
+            html += '<table class="cal-table"><thead><tr>';
+            var dayHeaders = ['日','月','火','水','木','金','土'];
+            for (var i = 0; i < 7; i++) {
+                var cls = i === 0 ? ' class="cal-sun"' : (i === 6 ? ' class="cal-sat"' : '');
+                html += '<th' + cls + '>' + dayHeaders[i] + '</th>';
+            }
+            html += '</tr></thead><tbody>';
+
+            var day = 1;
+            for (var row = 0; row < 6; row++) {
+                if (day > daysInMonth) break;
+                html += '<tr>';
+                for (var col = 0; col < 7; col++) {
+                    if ((row === 0 && col < startDow) || day > daysInMonth) {
+                        html += '<td class="cal-empty"></td>';
+                    } else {
+                        var dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                        var dayCls = 'cal-day';
+                        if (dateStr === selectedDateStr) dayCls += ' cal-selected';
+                        else if (calData[dateStr]) dayCls += ' cal-has-record';
+                        if (dateStr === todayStr && dateStr !== selectedDateStr) dayCls += ' cal-today';
+                        if (col === 0) dayCls += ' cal-sun';
+                        if (col === 6) dayCls += ' cal-sat';
+                        html += '<td onclick="selectCalDate(\'' + dateStr + '\')">';
+                        html += '<span class="' + dayCls + '">' + day + '</span></td>';
+                        day++;
+                    }
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderTimeline(checkIn, checkOut) {
+            var bar = document.getElementById('timelineBar');
+            if (!bar) return;
+            bar.innerHTML = '';
+            var startH = 8, endH = 20, totalH = endH - startH;
+            function toPct(timeStr) {
+                if (!timeStr) return null;
+                var p = timeStr.split(':');
+                var h = parseInt(p[0]), m = parseInt(p[1] || 0);
+                var pct = ((h + m / 60) - startH) / totalH * 100;
+                return Math.max(0, Math.min(100, pct));
+            }
+            if (checkIn && checkOut) {
+                var inP = toPct(checkIn), outP = toPct(checkOut);
+                if (inP !== null && outP !== null && outP > inP) {
+                    var w = document.createElement('div');
+                    w.className = 'tl-work';
+                    w.style.left = inP + '%';
+                    w.style.width = (outP - inP) + '%';
+                    bar.appendChild(w);
+                    var bs = toPct('12:00'), be = toPct('13:00');
+                    if (bs >= inP && be <= outP) {
+                        var b = document.createElement('div');
+                        b.className = 'tl-break';
+                        b.style.left = bs + '%';
+                        b.style.width = (be - bs) + '%';
+                        bar.appendChild(b);
+                    }
+                }
+            }
+        }
+
+        function selectCalDate(dateStr) {
+            goToDateAF(dateStr);
+        }
+
+        function calNav(action) {
+            if (action === 'prevMonth') prevMonthAF();
+            else if (action === 'nextMonth') nextMonthAF();
+        }
+    </script>
+
+    <apex:form id="mainForm">
+
+        <!-- Action Functions -->
+        <apex:actionFunction name="goToDateAF" action="{!goToDate}" reRender="mainForm">
+            <apex:param name="p1" value="" assignTo="{!selectedDateStr}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="prevMonthAF" action="{!prevMonth}" reRender="mainForm" />
+        <apex:actionFunction name="nextMonthAF" action="{!nextMonth}" reRender="mainForm" />
+
+        <div class="att-wrap">
+
+            <!-- Page Header -->
+            <div class="att-page-header">
+                <div>
+                    <h1>勤務実績入力</h1>
+                    <div class="page-subtitle">Work Record Input</div>
+                </div>
+            </div>
+
+            <!-- Top Bar: Date nav + Worker + Status -->
+            <div class="att-topbar">
+                <div class="date-nav">
+                    <apex:commandButton value="&#x25C0;" action="{!prevDate}" reRender="mainForm" styleClass="nav-btn" style="background:var(--teal);color:#fff;border:none;border-radius:4px;width:32px;height:32px;font-size:1rem;cursor:pointer;" />
+                    <span class="date-label">{!selectedDateDisplay}</span>
+                    <apex:commandButton value="&#x25B6;" action="{!nextDate}" reRender="mainForm" styleClass="nav-btn" style="background:var(--teal);color:#fff;border:none;border-radius:4px;width:32px;height:32px;font-size:1rem;cursor:pointer;" />
+                </div>
+                <div class="worker-info">
+                    <apex:selectList value="{!selectedWorkerId}" size="1" multiselect="false" styleClass="form-input">
+                        <apex:selectOptions value="{!workerOptions}" />
+                        <apex:actionSupport event="onchange" action="{!selectWorker}" reRender="mainForm" />
+                    </apex:selectList>
+                </div>
+                <span class="status-badge status-{!recordStatusLabel}">{!recordStatusLabel}</span>
+            </div>
+
+            <!-- Action Buttons Bar -->
+            <div class="action-bar">
+                <apex:commandButton value="登録" action="{!saveRecord}" reRender="mainForm" styleClass="btn btn-save" />
+                <apex:commandButton value="下書き" action="{!saveDraft}" reRender="mainForm" styleClass="btn btn-draft" />
+                <apex:commandButton value="クリア" action="{!clearRecord}" reRender="mainForm" styleClass="btn btn-clear" />
+                <apex:commandButton value="削除" action="{!deleteRecord}" reRender="mainForm" styleClass="btn btn-delete"
+                    onclick="if(!confirm('この日の勤務実績を削除しますか？')){return false;}" />
+            </div>
+
+            <!-- Body -->
+            <div class="att-body">
+                <div class="att-messages">
+                    <apex:messages id="pageMessages" layout="list" />
+                </div>
+
+                <div class="two-col">
+                    <!-- ===== LEFT COLUMN ===== -->
+                    <div class="col-left">
+
+                        <!-- Calendar -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> カレンダー</div>
+                            <div class="cal-container" id="calendarContainer"></div>
+                        </div>
+
+                        <!-- Monthly Summary -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> 月の勤務状況（{!currentMonth}）</div>
+                            <table class="summary-tbl">
+                                <tr>
+                                    <td class="lbl">勤務時間</td>
+                                    <td class="val">{!totalWorkingHoursFmt}</td>
+                                    <td class="lbl">有給休暇消化</td>
+                                    <td class="val">0.0日</td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">所定労働時間</td>
+                                    <td class="val">{!scheduledHoursFmt}</td>
+                                    <td class="lbl">代休消化</td>
+                                    <td class="val">0.0日</td>
+                                </tr>
+                                <tr>
+                                    <td class="lbl">所定外残業時間</td>
+                                    <td class="val">{!totalOvertimeHoursFmt}</td>
+                                    <td class="lbl">振休消化</td>
+                                    <td class="val">0.0日</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Daily Attendance Info -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> 勤怠情報</div>
+                            <div class="daily-grid">
+                                <div class="daily-item">
+                                    <span class="daily-label">実働</span>
+                                    <span class="daily-value">{!dailyWorkHoursFmt}</span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">休暇</span>
+                                    <span class="daily-value">0:00</span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">所定時間外</span>
+                                    <span class="daily-value">{!dailyOvertimeFmt}</span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">遅刻</span>
+                                    <span class="daily-value">0:00</span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">休憩</span>
+                                    <span class="daily-value">{!dailyBreakFmt}</span>
+                                </div>
+                                <div class="daily-item">
+                                    <span class="daily-label">早退</span>
+                                    <span class="daily-value">0:00</span>
+                                </div>
+                            </div>
+
+                            <!-- Timeline -->
+                            <div class="timeline-wrap">
+                                <div class="timeline-labels">
+                                    <span>8</span><span>9</span><span>10</span><span>11</span><span>12</span>
+                                    <span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
+                                    <span>18</span><span>19</span><span>20</span>
+                                </div>
+                                <div class="timeline-bar" id="timelineBar"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ===== RIGHT COLUMN ===== -->
+                    <div class="col-right">
+
+                        <!-- Work Information Form -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> 勤務情報</div>
+
+                            <div class="form-group">
+                                <div class="form-label">出勤/休暇</div>
+                                <apex:inputField value="{!currentRecord.Status__c}" styleClass="form-input" />
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-label">出勤</div>
+                                <div class="form-row">
+                                    <apex:outputText value="{0,date,yyyy/MM/dd}">
+                                        <apex:param value="{!selectedDate}" />
+                                    </apex:outputText>
+                                    <apex:inputText value="{!checkInTimeStr}" styleClass="form-input form-input-sm"
+                                        html-placeholder="HH:mm" />
+                                    <apex:commandButton value="打刻" action="{!quickCheckIn}"
+                                        reRender="mainForm" styleClass="btn-punch" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-label">退勤</div>
+                                <div class="form-row">
+                                    <apex:outputText value="{0,date,yyyy/MM/dd}">
+                                        <apex:param value="{!selectedDate}" />
+                                    </apex:outputText>
+                                    <apex:inputText value="{!checkOutTimeStr}" styleClass="form-input form-input-sm"
+                                        html-placeholder="HH:mm"/>
+                                    <apex:commandButton value="打刻" action="{!quickCheckOut}"
+                                        reRender="mainForm" styleClass="btn-punch" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-label">休憩時間（分）</div>
+                                <apex:inputField value="{!currentRecord.BreakMinutes__c}" styleClass="form-input form-input-sm" />
+                            </div>
+                        </div>
+
+                        <!-- Break Detail -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> 勤怠情報詳細</div>
+                            <table class="break-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>開始</th>
+                                        <th>終了</th>
+                                        <th>分類</th>
+                                        <th>内容/理由</th>
+                                        <th>時間</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:outputPanel rendered="{!currentRecord.BreakMinutes__c != null && currentRecord.BreakMinutes__c > 0}">
+                                        <tr>
+                                            <td>12:00</td>
+                                            <td>13:00</td>
+                                            <td>休憩</td>
+                                            <td>規定の休憩</td>
+                                            <td>{!dailyBreakFmt}</td>
+                                        </tr>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{!currentRecord.BreakMinutes__c == null || currentRecord.BreakMinutes__c == 0}">
+                                        <tr><td colspan="5" style="color:#999;text-align:center;">休憩データなし</td></tr>
+                                    </apex:outputPanel>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Working time input -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> プロジェクト</div>
+                            <table class="break-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>項番</th>
+                                        <th>案件番号</th>
+                                        <th>案件名</th>
+                                        <th>作業時間</th>
+                                        <th>コメント</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <apex:outputPanel >
+                                        <tr>
+                                            <td>1</td>
+                                            <td>P012005968</td>
+                                            <td>案件名サンプル</td>
+                                            <td>8:00</td>
+                                            <td>案件対応、会議</td>
+                                        </tr>
+                                    </apex:outputPanel>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="section">
+                            <div class="section-title"><span class="icon">&#x25C6;</span> コメント</div>
+                            <div class="form-label">実績</div>
+                            <apex:inputField value="{!currentRecord.Notes__c}" styleClass="comment-area" />
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Bottom action buttons -->
+                <div class="bottom-actions">
+                    <apex:commandButton value="登録" action="{!saveRecord}" reRender="mainForm" styleClass="btn btn-save" />
+                    <apex:commandButton value="下書き" action="{!saveDraft}" reRender="mainForm" styleClass="btn btn-draft" />
+                    <apex:commandButton value="クリア" action="{!clearRecord}" reRender="mainForm" styleClass="btn btn-clear" />
+                    <apex:commandButton value="削除" action="{!deleteRecord}" reRender="mainForm" styleClass="btn btn-delete"
+                        onclick="if(!confirm('この日の勤務実績を削除しますか？')){return false;}" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Render scripts (inside form, re-executed on reRender) -->
+        <script>
+            (function() {
+                try {
+                    var calData = {!calendarDataJson};
+                    var selDate = '{!JSENCODE(selectedDateIso)}';
+                    renderCalendar({!viewYear}, {!viewMonth}, calData, selDate);
+                    renderTimeline('{!JSENCODE(checkInTimeStr)}', '{!JSENCODE(checkOutTimeStr)}');
+                } catch(e) { /* ignore initial render errors */ }
+            })();
+        </script>
+
+    </apex:form>
+</apex:page>

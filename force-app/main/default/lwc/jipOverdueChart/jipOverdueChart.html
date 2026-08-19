@@ -1,0 +1,22 @@
+<template>
+    <lightning-card title="遅延タスク" icon-name="utility:warning">
+        <div slot="actions">
+            <span class={alertClass}>{overdueCount}件 遅延中</span>
+        </div>
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <template if:true={hasData}>
+                    <div class="chart-wrapper">
+                        <canvas lwc:ref="chartCanvas"></canvas>
+                    </div>
+                </template>
+                <template if:false={hasData}>
+                    <div class="empty-state success-msg">遅延タスクはありません &#10003;</div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,14 @@
+<template>
+    <lightning-card title="タスク完了数の推移" icon-name="utility:chart">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <div class="chart-wrapper">
+                    <canvas lwc:ref="chartCanvas"></canvas>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,2433 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRAttendanceController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Stats Row */
+    .att-stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+    }
+    .att-stat-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      text-align: center;
+    }
+    .att-stat-card .icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.3rem;
+    }
+    .att-stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .att-stat-card .label {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+
+    /* Content Grid */
+    .att-content {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 1.5rem;
+      padding: 0 1.5rem 1.5rem;
+    }
+
+    /* Attendance Table */
+    .att-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .att-card-header {
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #2c5282;
+      color: white;
+    }
+    .att-card-header h2 {
+      font-size: 1rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .att-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .att-table th {
+      background: #2c8a8f;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      color: white;
+      border-bottom: 2px solid var(--border);
+    }
+    .att-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .att-table tr:hover {
+      background: #f8fafc;
+    }
+
+    /* Status badges */
+    .status-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .status-出勤 {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status-退勤 {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .status-有給 {
+      background: #feebc8;
+      color: #744210;
+    }
+    .status-欠勤 {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .status-遅刻 {
+      background: #fefcbf;
+      color: #744210;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+    }
+    .punch-card {
+      background: linear-gradient(135deg, #4299e1, #3182ce);
+      border-radius: 12px;
+      padding: 1.5rem;
+      color: white;
+      text-align: center;
+    }
+    .punch-card .time {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .punch-card .date {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    .punch-btns {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .punch-btn {
+      flex: 1;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .punch-btn:hover {
+      transform: scale(1.02);
+    }
+    .punch-btn.check-in {
+      background: #48bb78;
+      color: white;
+    }
+    .punch-btn.check-out {
+      background: #ed8936;
+      color: white;
+    }
+
+    /* Leave Summary */
+    .leave-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 1.2rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+    .leave-card h3 {
+      font-size: 0.9rem;
+      margin: 0 0 1rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .leave-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .leave-item:last-child {
+      border-bottom: none;
+    }
+    .leave-type {
+      font-weight: 500;
+    }
+    .leave-days {
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .leave-bar {
+      width: 100%;
+      height: 6px;
+      background: #edf2f7;
+      border-radius: 3px;
+      margin-top: 0.3rem;
+      overflow: hidden;
+    }
+    .leave-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4299e1, #3182ce);
+      border-radius: 3px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .cal-nav-btn {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+    .cal-nav-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Month Navigation Buttons */
+    .month-nav-btn {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 1rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(44, 82, 130, 0.2);
+    }
+    .month-nav-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(44, 82, 130, 0.3);
+    }
+    .month-nav-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(44, 82, 130, 0.2);
+    }
+
+    /* Clickable Date Cell */
+    .date-cell-clickable {
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+    }
+    .date-cell-clickable:hover {
+      background: linear-gradient(135deg, #ebf8ff, #e6fffa) !important;
+      transform: scale(1.02);
+      box-shadow: inset 0 0 0 2px #3182ce;
+    }
+    .date-cell-clickable::after {
+      content: "📋";
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+    .date-cell-clickable:hover::after {
+      opacity: 1;
+    }
+    .cal-day:hover {
+      background: rgba(60, 170, 175, 0.15) !important;
+      border-radius: 4px;
+    }
+    .cal-selected {
+      color: #fff !important;
+    }
+    .cal-today {
+      border: 2px solid #3caaaf;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 1100px) {
+      .att-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .att-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Tabs */
+    .att-tabs {
+      display: flex;
+      font-weight: 600;
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      gap: 0;
+    }
+    .att-tab {
+      padding: 0.8rem 1.5rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+      color: var(--text-light);
+    }
+    .att-tab:hover {
+      color: var(--primary);
+    }
+    .att-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    /* Tab content */
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Schedule table */
+    .schedule-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    .schedule-day {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 0.8rem;
+      text-align: center;
+      min-height: 120px;
+    }
+    .schedule-day.today {
+      background: #ebf8ff;
+      border: 2px solid var(--primary-light);
+    }
+    .schedule-day.weekend {
+      background: #fff5f5;
+    }
+    .schedule-day .day-header {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .schedule-day .day-date {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+    .schedule-day .shift-type {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+    }
+    .shift-日勤 {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .shift-夜勤 {
+      background: #e9d8fd;
+      color: #553c9a;
+    }
+    .shift-早番 {
+      background: #feebc8;
+      color: #744210;
+    }
+    .shift-遅番 {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .shift-フレックス {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .shift-休日 {
+      background: #edf2f7;
+      color: #718096;
+    }
+
+    /* Request list */
+    .request-list {
+      padding: 1rem;
+    }
+    .request-item {
+      display: grid;
+      grid-template-columns: 1fr 120px 120px 100px 150px;
+      align-items: center;
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+    }
+    .request-item:hover {
+      background: #f8fafc;
+    }
+    .request-header {
+      font-weight: 600;
+      background: #f8fafc;
+      border-radius: 6px 6px 0 0;
+    }
+    .status-approved {
+      color: #22543d;
+      background: #c6f6d5;
+    }
+    .status-rejected {
+      color: #742a2a;
+      background: #fed7d7;
+    }
+    .status-pending {
+      color: #744210;
+      background: #feebc8;
+    }
+    .status-cancelled {
+      color: #718096;
+      background: #edf2f7;
+    }
+    .status-draft {
+      color: #2a4365;
+      background: #bee3f8;
+    }
+
+    /* Request form */
+    .request-form {
+      padding: 0.5rem;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .form-group label {
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+    }
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+    .toast {
+      min-width: 300px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: slideIn 0.3s ease-out;
+      margin-bottom: 0.5rem;
+    }
+    .toast-success {
+      background: linear-gradient(135deg, #38a169, #2f855a);
+      color: #fff;
+    }
+    .toast-error {
+      background: linear-gradient(135deg, #e53e3e, #c53030);
+      color: #fff;
+    }
+    .toast-warning {
+      background: linear-gradient(135deg, #d69e2e, #b7791f);
+      color: #fff;
+    }
+    .toast-icon {
+      font-size: 1.5rem;
+    }
+    .toast-message {
+      flex: 1;
+      font-weight: 500;
+    }
+    .toast-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .toast-close:hover {
+      opacity: 1;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+  </style>
+
+  <script>
+    function updateClock() {
+      var now = new Date();
+      var h = String(now.getHours()).padStart(2, "0");
+      var m = String(now.getMinutes()).padStart(2, "0");
+      var s = String(now.getSeconds()).padStart(2, "0");
+      var timeEl = document.getElementById("currentTime");
+      if (timeEl) timeEl.textContent = h + ":" + m + ":" + s;
+    }
+    setInterval(updateClock, 1000);
+    window.onload = updateClock;
+
+    function showTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll(".tab-content").forEach(function (tab) {
+        tab.classList.remove("active");
+      });
+      document.querySelectorAll(".att-tab").forEach(function (btn) {
+        btn.classList.remove("active");
+      });
+      // Show selected tab
+      var tabEl = document.getElementById("tab-" + tabName);
+      if (tabEl) tabEl.classList.add("active");
+      var btnEl = document.getElementById("btn-" + tabName);
+      if (btnEl) btnEl.classList.add("active");
+      // Save tab state
+      var hiddenTab = document.getElementById(
+        "{!$Component.mainForm.currentTabInput}"
+      );
+      if (hiddenTab) hiddenTab.value = tabName;
+    }
+
+    function restoreTab() {
+      var hiddenTab = document.getElementById(
+        "{!$Component.mainForm.currentTabInput}"
+      );
+      if (hiddenTab && hiddenTab.value) {
+        showTab(hiddenTab.value);
+      }
+    }
+
+    // Toast Notification System
+    function showToast(message, type) {
+      type = type || "success";
+      var container = document.getElementById("toast-container");
+      if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        container.className = "toast-container";
+        document.body.appendChild(container);
+      }
+
+      var icons = {
+        success: "✅",
+        error: "❌",
+        warning: "⚠️"
+      };
+
+      var toast = document.createElement("div");
+      toast.className = "toast toast-" + type;
+      toast.innerHTML =
+        '<span class="toast-icon">' +
+        icons[type] +
+        "</span>" +
+        '<span class="toast-message">' +
+        message +
+        "</span>" +
+        '<button class="toast-close" onclick="closeToast(this)">×</button>';
+
+      container.appendChild(toast);
+
+      // Auto remove after 4 seconds
+      setTimeout(function () {
+        if (toast.parentNode) {
+          toast.style.animation = "slideOut 0.3s ease-out forwards";
+          setTimeout(function () {
+            if (toast.parentNode) toast.parentNode.removeChild(toast);
+          }, 300);
+        }
+      }, 4000);
+    }
+
+    function closeToast(btn) {
+      var toast = btn.parentNode;
+      toast.style.animation = "slideOut 0.3s ease-out forwards";
+      setTimeout(function () {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }
+
+    function checkAndShowToast() {
+      // Check for apex:pageMessages content
+      var messagesPanel = document.querySelector('[id$="worksheetMessages"]');
+      if (messagesPanel) {
+        var confirmMsgs = messagesPanel.querySelectorAll(
+          ".confirmM, .messageText"
+        );
+        var errorMsgs = messagesPanel.querySelectorAll(".errorM3, .errorMsg");
+
+        confirmMsgs.forEach(function (msg) {
+          if (msg.textContent.trim()) {
+            showToast(msg.textContent.trim(), "success");
+          }
+        });
+
+        errorMsgs.forEach(function (msg) {
+          if (msg.textContent.trim()) {
+            showToast(msg.textContent.trim(), "error");
+          }
+        });
+
+        // Hide the original messages
+        messagesPanel.style.display = "none";
+      }
+    }
+  </script>
+
+  <apex:form id="mainForm" html-novalidate="novalidate">
+    <apex:inputHidden id="currentTabInput" value="{!currentTab}" />
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="attendance" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['attendance_mgmt']}
+            </div>
+            <h1>&#128336; {!T['attendance_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <apex:inputHidden value="{!selectedAttendanceDate}"
+              id="selectedAttDateInput"
+            />
+            <apex:actionFunction name="loadDailyAttInfoAction"
+              action="{!loadDailyAttendanceInfo}"
+              rerender="attendanceInfoPanel"
+              oncomplete="showAttendanceModal();"
+            />
+            <apex:commandButton value="&#128197; {!T['monthly_report']}"
+              action="{!exportMonthlyReport}"
+              styleClass="btn btn-outline"
+              immediate="true"
+            />
+            <apex:commandButton value="&#128196; {!T['export']}"
+              action="{!exportAttendanceReport}"
+              styleClass="btn btn-primary"
+              immediate="true"
+            />
+          </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="att-tabs">
+          <button
+            type="button"
+            id="btn-attendance"
+            class="att-tab {!IF(currentTab=='attendance','active','')}"
+            onclick="showTab('attendance')"
+          >
+            &#128203; 打刻管理
+          </button>
+          <button
+            type="button"
+            id="btn-schedule"
+            class="att-tab {!IF(currentTab=='schedule','active','')}"
+            onclick="showTab('schedule')"
+          >
+            &#128197; 勤務スケジュール
+          </button>
+          <button
+            type="button"
+            id="btn-requests"
+            class="att-tab {!IF(currentTab=='requests','active','')}"
+            onclick="showTab('requests')"
+          >
+            &#128221; 申請・承認
+          </button>
+        </div>
+
+        <!-- TAB 1: Attendance (現在の打刻管理) -->
+        <div
+          id="tab-attendance"
+          class="tab-content {!IF(currentTab=='attendance','active','')}"
+        >
+          <!-- Main Content -->
+          <!-- Stats Row -->
+          <div class="att-stats">
+            <div class="att-stat-card">
+              <div class="icon" style="color: #22c55e">&#9679;</div>
+              <div class="value">{!stats.workingCount}</div>
+              <div class="label">{!T['working']}</div>
+            </div>
+            <div class="att-stat-card">
+              <div class="icon" style="color: #ef4444">&#9679;</div>
+              <div class="value">{!stats.notCheckedInCount}</div>
+              <div class="label">{!T['not_checked_in']}</div>
+            </div>
+            <div class="att-stat-card">
+              <div class="icon" style="color: #f59e0b">&#9733;</div>
+              <div class="value">{!stats.onLeaveCount}</div>
+              <div class="label">{!T['paid_leave']}</div>
+            </div>
+            <div class="att-stat-card">
+              <div class="icon">&#9200;</div>
+              <div class="value">{!stats.lateCount}</div>
+              <div class="label">{!T['late_arrival']}</div>
+            </div>
+            <div class="att-stat-card">
+              <div class="icon" style="color: #3b82f6">&#9201;</div>
+              <div class="value">{!stats.monthlyOvertimeHours}h</div>
+              <div class="label">{!T['monthly_overtime']}</div>
+            </div>
+          </div>
+          <div class="att-content" style="grid-template-columns: 1fr 850px">
+            <!-- Quick Actions Sidebar -->
+            <div class="quick-actions">
+              <!-- Messages -->
+              <apex:outputPanel id="messagesPanel">
+                <apex:pageMessages />
+              </apex:outputPanel>
+
+              <!-- Punch Card -->
+              <div class="punch-card">
+                <div class="date">
+                  <apex:outputText value="{0, date, yyyy/MM/dd (EEE)}">
+                    <apex:param value="{!TODAY()}" />
+                  </apex:outputText>
+                </div>
+                <div class="time" id="currentTime">--:--:--</div>
+
+                <!-- Current status -->
+                <apex:outputPanel rendered="{!isCheckedIn}">
+                  <div
+                    style="
+                      background: rgba(255, 255, 255, 0.2);
+                      padding: 0.5rem;
+                      border-radius: 6px;
+                      margin: 0.5rem 0;
+                      font-size: 0.85rem;
+                    "
+                  >
+                    出勤中: {!currentCheckInTime}
+                  </div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!NOT(ISBLANK(currentCheckOutTime))}"
+                >
+                  <div
+                    style="
+                      background: rgba(255, 255, 255, 0.2);
+                      padding: 0.5rem;
+                      border-radius: 6px;
+                      margin: 0.5rem 0;
+                      font-size: 0.85rem;
+                    "
+                  >
+                    退勤済: {!currentCheckOutTime}
+                  </div>
+                </apex:outputPanel>
+
+                <!-- Hidden fields for GPS, IP, Device -->
+                <apex:inputHidden id="gpsLocation" value="{!gpsLocation}" />
+                <apex:inputHidden id="ipAddress" value="{!ipAddress}" />
+                <apex:inputHidden id="deviceType" value="{!deviceType}" />
+
+                <div class="punch-btns">
+                  <apex:commandButton value="{!T['check_in']}"
+                    action="{!checkIn}"
+                    styleClass="punch-btn check-in"
+                    rerender="mainForm"
+                    onclick="setDeviceInfo()"
+                    disabled="{!isCheckedIn}"
+                  />
+                  <apex:commandButton value="{!T['check_out']}"
+                    action="{!checkOut}"
+                    styleClass="punch-btn check-out"
+                    rerender="mainForm"
+                    onclick="setDeviceInfo()"
+                    disabled="{!NOT(isCheckedIn)}"
+                  />
+                </div>
+                <script>
+                  function setDeviceInfo() {
+                    // Set device type synchronously
+                    var device = /Mobi|Android/i.test(navigator.userAgent)
+                      ? "Smartphone"
+                      : "PC";
+                    var gpsEl = document.getElementById(
+                      "{!$Component.gpsLocation}"
+                    );
+                    var ipEl = document.getElementById(
+                      "{!$Component.ipAddress}"
+                    );
+                    var deviceEl = document.getElementById(
+                      "{!$Component.deviceType}"
+                    );
+
+                    if (deviceEl) deviceEl.value = device;
+                    if (gpsEl) gpsEl.value = "";
+                    if (ipEl) ipEl.value = "";
+
+                    // Try to get GPS (async but non-blocking)
+                    if (navigator.geolocation && gpsEl) {
+                      navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                          gpsEl.value =
+                            pos.coords.latitude + "," + pos.coords.longitude;
+                        },
+                        function () {}
+                      );
+                    }
+
+                    // Try to get IP (async but non-blocking)
+                    if (ipEl) {
+                      fetch("https://api.ipify.org?format=json")
+                        .then(function (r) {
+                          return r.json();
+                        })
+                        .then(function (data) {
+                          ipEl.value = data.ip;
+                        })
+                        .catch(function () {});
+                    }
+
+                    return true;
+                  }
+                </script>
+              </div>
+            </div>
+            <!-- Attendance Table -->
+            <div class="att-card">
+              <div class="att-card-header">
+                <h2>{!T['todays_attendance']}</h2>
+                <apex:input type="date"
+                  value="{!selectedDate}"
+                  styleClass="btn btn-outline"
+                  style="padding: 0.4rem"
+                />
+              </div>
+              <div style="overflow-x: auto">
+                <table class="att-table">
+                  <thead>
+                    <tr>
+                      <th>{!T['employee_name']}</th>
+                      <th>{!T['department']}</th>
+                      <th>{!T['check_in']}</th>
+                      <th>{!T['check_out']}</th>
+                      <th>{!T['working_hours']}</th>
+                      <th>{!T['overtime']}</th>
+                      <th>{!T['status']}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <apex:repeat value="{!attendanceList}" var="att">
+                      <tr>
+                        <td><strong>{!att.employeeName}</strong></td>
+                        <td>{!att.departmentName}</td>
+                        <td>{!att.checkInTime}</td>
+                        <td>{!att.checkOutTime}</td>
+                        <td>{!att.workingHours}</td>
+                        <td>{!att.overtimeHours}</td>
+                        <td>
+                          <span class="{!att.statusClass}">{!att.status}</span>
+                        </td>
+                      </tr>
+                    </apex:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End TAB 1: Attendance -->
+
+        <!-- TAB 2: Schedule (勤務スケジュール管理) - Worksheet View -->
+
+        <div
+          id="tab-schedule"
+          class="tab-content {!IF(currentTab=='schedule','active','')}"
+          style="padding-left: 1rem; padding-right: 1rem"
+        >
+          <apex:outputPanel id="worksheetPanel">
+            <!-- Month Navigation -->
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding-top: 1rem;
+              "
+            >
+              <apex:commandButton value="⏮"
+                action="{!prevYear}"
+                styleClass="month-nav-btn"
+                rerender="worksheetPanel"
+                oncomplete="restoreTab()"
+                title="前年"
+              />
+              <apex:commandButton value="◀"
+                action="{!prevMonth}"
+                styleClass="month-nav-btn"
+                rerender="worksheetPanel"
+                oncomplete="restoreTab()"
+                title="前月"
+              />
+              <span
+                style="
+                  font-size: 1.1rem;
+                  font-weight: 700;
+                  min-width: 140px;
+                  text-align: center;
+                  color: var(--text);
+                  background: var(--white);
+                  padding: 0.5rem 1rem;
+                  border-radius: 6px;
+                  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+                "
+                >{!calendarMonthLabel}</span
+              >
+              <apex:commandButton value="▶"
+                action="{!nextMonth}"
+                styleClass="month-nav-btn"
+                rerender="worksheetPanel"
+                oncomplete="restoreTab()"
+                title="翌月"
+              />
+              <apex:commandButton value="⏭"
+                action="{!nextYear}"
+                styleClass="month-nav-btn"
+                rerender="worksheetPanel"
+                oncomplete="restoreTab()"
+                title="翌年"
+              />
+
+              <!-- Add Project -->
+              <div
+                style="
+                  margin-left: 2rem;
+                  display: flex;
+                  gap: 0.5rem;
+                  align-items: center;
+                "
+              >
+                <apex:selectList value="{!newProjectId}"
+                  size="1"
+                  style="
+                    padding: 0.4rem;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    font-size: 0.85rem;
+                  "
+                >
+                  <apex:selectOptions value="{!projectOptions}" />
+                </apex:selectList>
+                <apex:commandButton value="プロジェクト追加"
+                  action="{!addProjectToWorksheet}"
+                  style="
+                    padding: 0.4rem 0.8rem;
+                    background: #3182ce;
+                    color: #fff;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                  "
+                  rerender="worksheetPanel"
+                  oncomplete="restoreTab()"
+                />
+              </div>
+            </div>
+
+            <!-- Monthly Work Status -->
+            <div class="att-card" style="margin-top: 1.5rem">
+              <div
+                class="att-card-header"
+                style="background: linear-gradient(135deg, #2c5282)"
+              >
+                <h2 style="color: #fff">月の稼働状況({!calendarMonthLabel})</h2>
+              </div>
+              <div style="padding: 1rem">
+                <table style="width: 100%; border-collapse: collapse">
+                  <tr>
+                    <td
+                      style="padding: 0.6rem 1rem; color: #3182ce; width: 25%"
+                    >
+                      勤務時間
+                    </td>
+                    <td
+                      style="padding: 0.6rem 1rem; font-weight: 600; width: 25%"
+                    >
+                      {!monthlyWorkStatus.workHours}
+                    </td>
+                    <td
+                      style="padding: 0.6rem 1rem; color: #3182ce; width: 25%"
+                    >
+                      有給休暇消化
+                    </td>
+                    <td
+                      style="padding: 0.6rem 1rem; font-weight: 600; width: 25%"
+                    >
+                      {!monthlyWorkStatus.paidLeaveDays}日
+                      {!monthlyWorkStatus.paidLeaveHours}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0.6rem 1rem; color: #3182ce">
+                      所定労働時間
+                    </td>
+                    <td style="padding: 0.6rem 1rem; font-weight: 600">
+                      {!monthlyWorkStatus.scheduledHours}
+                    </td>
+                    <td style="padding: 0.6rem 1rem; color: #3182ce">
+                      代休消化
+                    </td>
+                    <td style="padding: 0.6rem 1rem; font-weight: 600">
+                      {!monthlyWorkStatus.compensatoryDays}日
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0.6rem 1rem; color: #3182ce">
+                      所定外残業時間
+                    </td>
+                    <td style="padding: 0.6rem 1rem; font-weight: 600">
+                      {!monthlyWorkStatus.overtimeHours}
+                    </td>
+                    <td style="padding: 0.6rem 1rem; color: #3182ce">
+                      振休消化
+                    </td>
+                    <td style="padding: 0.6rem 1rem; font-weight: 600">
+                      {!monthlyWorkStatus.substituteHolidayDays}日
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+
+            <!-- Monthly Project Summary -->
+            <apex:outputPanel id="monthlyProjectSummaryPanel">
+              <div class="att-card" style="margin-top: 1.5rem">
+                <div
+                  class="att-card-header"
+                  style="background: linear-gradient(135deg, #2c5282)"
+                >
+                  <h2 style="color: #fff">
+                    プロジェクト工数サマリー({!calendarMonthLabel})
+                  </h2>
+                </div>
+                <div>
+                  <apex:outputPanel rendered="{!monthlyProjectSummaries.size > 0}"
+                  >
+                    <table
+                      style="
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 0.85rem;
+                        min-width: 800px;
+                      "
+                    >
+                      <thead>
+                        <tr style="background: #3caaaf; color: #fff">
+                          <th
+                            style="
+                              padding: 0.6rem;
+                              text-align: center;
+                              border: 1px solid #2c8a8f;
+                              width: 60px;
+                            "
+                          >
+                            削除
+                          </th>
+                          <th
+                            style="
+                              padding: 0.6rem;
+                              text-align: center;
+                              border: 1px solid #2c8a8f;
+                              width: 130px;
+                            "
+                          >
+                            プロジェクトCD
+                          </th>
+                          <th
+                            style="
+                              padding: 0.6rem;
+                              text-align: left;
+                              border: 1px solid #2c8a8f;
+                            "
+                          >
+                            プロジェクト名
+                          </th>
+                          <th
+                            style="
+                              padding: 0.6rem;
+                              text-align: center;
+                              border: 1px solid #2c8a8f;
+                              width: 110px;
+                            "
+                          >
+                            工数合計
+                          </th>
+                          <th
+                            style="
+                              padding: 0.6rem;
+                              text-align: center;
+                              border: 1px solid #2c8a8f;
+                              width: 90px;
+                            "
+                          >
+                            割合
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <apex:repeat value="{!monthlyProjectSummaries}"
+                          var="summary"
+                        >
+                          <tr style="background: #f0fff4">
+                            <td
+                              style="
+                                padding: 0.4rem;
+                                text-align: center;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              <apex:commandButton value="X"
+                                action="{!removeProjectFromMonth}"
+                                style="
+                                  padding: 0.2rem 0.6rem;
+                                  font-size: 0.85rem;
+                                  color: #e53e3e;
+                                  border: 1px solid #e53e3e;
+                                  background: #fff;
+                                  border-radius: 4px;
+                                  cursor: pointer;
+                                "
+                                rerender="worksheetPanel,monthlyProjectSummaryPanel"
+                                oncomplete="restoreTab()"
+                              >
+                                <apex:param name="projectId"
+                                  value="{!summary.projectId}"
+                                  assignTo="{!selectedWorkEntryId}"
+                                />
+                              </apex:commandButton>
+                            </td>
+                            <td
+                              style="
+                                padding: 0.4rem;
+                                text-align: center;
+                                border: 1px solid #ddd;
+                                font-family: monospace;
+                              "
+                            >
+                              {!summary.projectCode}
+                            </td>
+                            <td style="padding: 0.4rem; border: 1px solid #ddd">
+                              {!summary.projectName}
+                            </td>
+                            <td
+                              style="
+                                padding: 0.4rem;
+                                text-align: center;
+                                border: 1px solid #ddd;
+                                font-weight: 600;
+                              "
+                            >
+                              {!summary.totalHoursFormatted}
+                            </td>
+                            <td
+                              style="
+                                padding: 0.4rem;
+                                text-align: center;
+                                border: 1px solid #ddd;
+                                font-weight: 600;
+                                color: #3182ce;
+                              "
+                            >
+                              {!summary.percentage}%
+                            </td>
+                          </tr>
+                        </apex:repeat>
+                      </tbody>
+                      <tfoot>
+                        <tr style="background: #e6f7f5; font-weight: 700">
+                          <td
+                            colspan="3"
+                            style="
+                              padding: 0.4rem;
+                              text-align: right;
+                              border: 1px solid #ddd;
+                            "
+                          >
+                            合計
+                          </td>
+                          <td
+                            style="
+                              padding: 0.4rem;
+                              text-align: center;
+                              border: 1px solid #ddd;
+                            "
+                          >
+                            <apex:outputText value="{0}:{1}">
+                              <apex:param value="{!FLOOR(monthlyTotalHours)}" />
+                              <apex:param value="{!IF(MOD(ROUND(monthlyTotalHours * 60, 0), 60) < 10, '0', '')}{!MOD(ROUND(monthlyTotalHours * 60, 0), 60)}"
+                              />
+                            </apex:outputText>
+                          </td>
+                          <td
+                            style="
+                              padding: 0.4rem;
+                              text-align: center;
+                              border: 1px solid #ddd;
+                            "
+                          >
+                            100%
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </apex:outputPanel>
+                  <apex:outputPanel rendered="{!monthlyProjectSummaries.size == 0}"
+                  >
+                    <div
+                      style="
+                        text-align: center;
+                        padding: 2rem;
+                        color: #718096;
+                        background: #f7fafc;
+                        border: 1px dashed #cbd5e0;
+                        border-radius: 8px;
+                      "
+                    >
+                      今月の登録データがありません
+                    </div>
+                  </apex:outputPanel>
+                </div>
+              </div>
+            </apex:outputPanel>
+
+            <div
+              class="att-card-header"
+              style="background: linear-gradient(135deg, #2c5282)"
+            >
+              <h2 style="color: #fff">勤怠入力({!calendarMonthLabel})</h2>
+            </div>
+
+            <!-- Header with Legend and Export Button -->
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                padding: 0.5rem 0;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  gap: 1.5rem;
+                  font-size: 0.85rem;
+                  color: #555;
+                "
+              >
+                <span>× 却下</span>
+                <span>▲ 入力中</span>
+                <span style="color: #3182ce">● 入力済</span>
+                <span>承認</span>
+                <span>承認済</span>
+              </div>
+              <apex:commandButton value="PJ作業日報出力"
+                styleClass="btn"
+                style="
+                  background: #38a169;
+                  color: #fff;
+                  padding: 0.5rem 1rem;
+                  border-radius: 4px;
+                  border: none;
+                "
+              />
+            </div>
+
+            <!-- Worksheet Table -->
+            <div
+              style="
+                overflow-x: auto;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+              "
+            >
+              <table
+                style="
+                  width: 100%;
+                  border-collapse: collapse;
+                  font-size: 0.85rem;
+                  min-width: 800px;
+                "
+              >
+                <thead>
+                  <tr style="background: #3caaaf; color: #fff">
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 35px;
+                      "
+                    >
+                      <input type="checkbox" />
+                    </th>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 90px;
+                      "
+                    >
+                      日付
+                    </th>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 60px;
+                      "
+                    >
+                      出勤
+                    </th>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 60px;
+                      "
+                    >
+                      退勤
+                    </th>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 50px;
+                      "
+                    >
+                      状態
+                    </th>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 70px;
+                      "
+                    >
+                      作業時間
+                    </th>
+                    <apex:repeat value="{!worksheetProjects}" var="proj">
+                      <th
+                        style="
+                          padding: 0.6rem;
+                          text-align: center;
+                          border: 1px solid #2c8a8f;
+                          min-width: 80px;
+                          max-width: 120px;
+                          white-space: nowrap;
+                          overflow: hidden;
+                          text-overflow: ellipsis;
+                        "
+                        title="{!proj.projectName}"
+                      >
+                        {!proj.projectName}
+                      </th>
+                      <th
+                        style="
+                          padding: 0.6rem;
+                          text-align: center;
+                          border: 1px solid #2c8a8f;
+                          min-width: 120px;
+                          max-width: 180px;
+                          background: #2c9a9f;
+                        "
+                      >
+                        コメント
+                      </th>
+                    </apex:repeat>
+                    <th
+                      style="
+                        padding: 0.6rem;
+                        text-align: center;
+                        border: 1px solid #2c8a8f;
+                        width: 80px;
+                      "
+                    >
+                      承認記録
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!worksheetRows}" var="row">
+                    <tr
+                      style="background: {!IF(row.isWeekend, '#e0e0e0', '#f0fff4')};"
+                    >
+                      <td
+                        style="
+                          padding: 0.4rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                        "
+                      >
+                        <input type="checkbox" />
+                      </td>
+                      <td
+                        class="date-cell-clickable"
+                        style="padding: 0.4rem 1.5rem 0.4rem 0.4rem; text-align: center; border: 1px solid #ddd; font-weight: 600; color: {!IF(row.isSunday, '#e53e3e', IF(row.isSaturday, '#3182ce', '#2c5282'))};"
+                        onclick="
+                          selectAttDate(
+                            '{!row.dateStr}',
+                            '{!row.dateLabel} ({!row.dayOfWeek})'
+                          )
+                        "
+                        title="📋 クリックして勤怠情報を表示"
+                      >
+                        {!row.dateLabel} ({!row.dayOfWeek})
+                      </td>
+                      <td
+                        style="
+                          padding: 0.2rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                        "
+                      >
+                        <apex:inputText value="{!row.checkInTime}"
+                          style="
+                            width: 55px;
+                            padding: 0.3rem;
+                            text-align: center;
+                            border: 1px solid #ccc;
+                            border-radius: 3px;
+                            font-size: 0.85rem;
+                            color: #22c55e;
+                            font-weight: 500;
+                            background: #fff;
+                          "
+                          html-placeholder="00:00"
+                          rendered="{!!row.isWeekend}"
+                        />
+                        <apex:outputPanel rendered="{!row.isWeekend}">
+                          <span style="color: #888">{!row.checkInTime}</span>
+                        </apex:outputPanel>
+                      </td>
+                      <td
+                        style="
+                          padding: 0.2rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                        "
+                      >
+                        <apex:inputText value="{!row.checkOutTime}"
+                          style="
+                            width: 55px;
+                            padding: 0.3rem;
+                            text-align: center;
+                            border: 1px solid #ccc;
+                            border-radius: 3px;
+                            font-size: 0.85rem;
+                            color: #ef4444;
+                            font-weight: 500;
+                            background: #fff;
+                          "
+                          html-placeholder="00:00"
+                          rendered="{!!row.isWeekend}"
+                        />
+                        <apex:outputPanel rendered="{!row.isWeekend}">
+                          <span style="color: #888">{!row.checkOutTime}</span>
+                        </apex:outputPanel>
+                      </td>
+                      <td
+                        style="
+                          padding: 0.4rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                          color: #3182ce;
+                          font-size: 1rem;
+                        "
+                      >
+                        {!row.statusIcon}
+                      </td>
+                      <td
+                        style="
+                          padding: 0.4rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                          font-weight: 500;
+                        "
+                      >
+                        {!row.totalHours}
+                      </td>
+                      <apex:repeat value="{!worksheetProjects}" var="proj">
+                        <td
+                          style="padding: 0.2rem; text-align: center; border: 1px solid #ddd; background: {!IF(row.isWeekend, '#e0e0e0', '#e6f7f5')};"
+                        >
+                          <apex:inputText value="{!row.projectHours[proj.columnIndex]}"
+                            style="
+                              width: 60px;
+                              padding: 0.3rem;
+                              text-align: center;
+                              border: 1px solid #ccc;
+                              border-radius: 3px;
+                              font-size: 0.85rem;
+                              background: #fff;
+                            "
+                            html-placeholder="0:00"
+                            rendered="{!!row.isWeekend}"
+                          />
+                          <apex:outputPanel rendered="{!row.isWeekend}">
+                            <span style="color: #888"
+                              >{!row.projectHours[proj.columnIndex]}</span
+                            >
+                          </apex:outputPanel>
+                        </td>
+                        <td
+                          style="padding: 0.2rem; border: 1px solid #ddd; background: {!IF(row.isWeekend, '#e0e0e0', '#f0f7ff')};"
+                        >
+                          <apex:inputText value="{!row.projectComments[proj.columnIndex]}"
+                            style="
+                              width: 100%;
+                              padding: 0.3rem;
+                              border: 1px solid #ccc;
+                              border-radius: 3px;
+                              font-size: 0.85rem;
+                              background: #fff;
+                            "
+                            html-placeholder="コメント"
+                            rendered="{!!row.isWeekend}"
+                          />
+                          <apex:outputPanel rendered="{!row.isWeekend}">
+                            <span style="color: #888"
+                              >{!row.projectComments[proj.columnIndex]}</span
+                            >
+                          </apex:outputPanel>
+                        </td>
+                      </apex:repeat>
+                      <td
+                        style="
+                          padding: 0.4rem;
+                          text-align: center;
+                          border: 1px solid #ddd;
+                          color: #666;
+                          font-size: 0.8rem;
+                        "
+                      >
+                        {!row.approvalRecord}
+                      </td>
+                    </tr>
+                  </apex:repeat>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- No Projects Message -->
+            <apex:outputPanel rendered="{!!hasWorksheetProjects}">
+              <div
+                style="
+                  text-align: center;
+                  padding: 3rem;
+                  color: #718096;
+                  background: #f7fafc;
+                  border: 1px dashed #cbd5e0;
+                  border-radius: 8px;
+                  margin-top: 1rem;
+                "
+              >
+                プロジェクトを追加してください。上のドロップダウンからプロジェクトを選択し「プロジェクト追加」ボタンをクリックしてください。
+              </div>
+            </apex:outputPanel>
+
+            <!-- Messages -->
+            <apex:pageMessages id="worksheetMessages" />
+
+            <!-- Register Button -->
+            <div style="text-align: center; margin-top: 1rem; padding: 1rem 0">
+              <apex:commandButton value="登録"
+                action="{!saveMonthlyWorksheet}"
+                style="
+                  padding: 0.8rem 3rem;
+                  background: #4a5cc5;
+                  color: #fff;
+                  border: none;
+                  border-radius: 25px;
+                  font-size: 1rem;
+                  font-weight: 500;
+                  cursor: pointer;
+                  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                "
+                rerender="worksheetPanel,monthlyProjectSummaryPanel"
+                oncomplete="restoreTab(); checkAndShowToast();"
+              />
+            </div>
+          </apex:outputPanel>
+        </div>
+        <!-- End TAB 2: Schedule -->
+
+        <!-- Attendance Info Modal -->
+        <div
+          id="attendanceInfoModal"
+          style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+          "
+        >
+          <apex:outputPanel id="attendanceInfoPanel">
+            <div
+              style="
+                background: #fff;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                max-width: 500px;
+                width: 90%;
+                max-height: 90vh;
+                overflow: auto;
+              "
+            >
+              <div
+                style="
+                  padding: 1rem 1.5rem;
+                  border-bottom: 1px solid #e2e8f0;
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  background: linear-gradient(135deg, #38a169, #48bb78);
+                  border-radius: 12px 12px 0 0;
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 0.5rem">
+                  <span style="color: #fff; font-size: 1.2rem">&#128197;</span>
+                  <h3
+                    style="
+                      margin: 0;
+                      font-size: 1.1rem;
+                      font-weight: 600;
+                      color: #fff;
+                    "
+                  >
+                    勤怠情報
+                    <apex:outputPanel rendered="{!selectedAttendanceDateLabel != null && selectedAttendanceDateLabel != ''}"
+                    >
+                      <span
+                        style="
+                          font-weight: normal;
+                          font-size: 0.95rem;
+                          margin-left: 0.5rem;
+                        "
+                        >- {!selectedAttendanceDateLabel}</span
+                      >
+                    </apex:outputPanel>
+                  </h3>
+                </div>
+                <button
+                  onclick="
+                    closeAttendanceModal();
+                    return false;
+                  "
+                  style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    color: #fff;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 1.2rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                  title="閉じる"
+                >
+                  &times;
+                </button>
+              </div>
+              <div style="padding: 1.5rem">
+                <table
+                  style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 1.5rem;
+                  "
+                >
+                  <tr>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #3182ce;
+                        width: 25%;
+                        background: #f7fafc;
+                        border-radius: 6px 0 0 0;
+                      "
+                    >
+                      実働
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        width: 25%;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.actualWorkHours}
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #3182ce;
+                        width: 25%;
+                        background: #f7fafc;
+                      "
+                    >
+                      休暇
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        width: 25%;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.leaveHours}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #3182ce;
+                        background: #f7fafc;
+                      "
+                    >
+                      所定時間外
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.outsideScheduledHours}
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #e53e3e;
+                        background: #f7fafc;
+                      "
+                    >
+                      遅刻
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        color: #e53e3e;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.lateHours}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #3182ce;
+                        background: #f7fafc;
+                        border-radius: 0 0 0 6px;
+                      "
+                    >
+                      休憩
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.breakHours}
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        color: #dd6b20;
+                        background: #f7fafc;
+                      "
+                    >
+                      早退
+                    </td>
+                    <td
+                      style="
+                        padding: 0.8rem 1rem;
+                        font-weight: 600;
+                        color: #dd6b20;
+                        font-size: 1.1rem;
+                      "
+                    >
+                      {!attendanceInfo.earlyLeaveHours}
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Timeline Bar -->
+                <div
+                  style="
+                    position: relative;
+                    margin-top: 1rem;
+                    padding: 1rem;
+                    background: #f7fafc;
+                    border-radius: 8px;
+                  "
+                >
+                  <div
+                    style="
+                      font-size: 0.85rem;
+                      color: #1a365d;
+                      margin-bottom: 0.75rem;
+                      font-weight: 500;
+                    "
+                  >
+                    タイムライン
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      font-size: 0.65rem;
+                      color: #718096;
+                      margin-bottom: 0.25rem;
+                    "
+                  >
+                    <span>0</span><span>1</span><span>2</span><span>3</span
+                    ><span>4</span><span>5</span><span>6</span><span>7</span
+                    ><span>8</span><span>9</span><span>10</span><span>11</span
+                    ><span>12</span><span>13</span><span>14</span><span>15</span
+                    ><span>16</span><span>17</span><span>18</span><span>19</span
+                    ><span>20</span><span>21</span><span>22</span
+                    ><span>23</span>
+                  </div>
+                  <div
+                    style="
+                      height: 28px;
+                      background: #e2e8f0;
+                      border-radius: 6px;
+                      position: relative;
+                      overflow: hidden;
+                    "
+                  >
+                    <!-- Work time block -->
+                    <apex:outputPanel rendered="{!attendanceInfo.hasAttendance}"
+                    >
+                      <div
+                        style="position: absolute; left: {!attendanceInfo.checkInPosition}%; width: {!attendanceInfo.workBlockWidth}%; height: 100%; background: linear-gradient(135deg, #bee3f8, #90cdf4); border: 1px solid #63b3ed;"
+                      ></div>
+                    </apex:outputPanel>
+                    <!-- Break block (12:00-13:00) -->
+                    <apex:outputPanel rendered="{!attendanceInfo.breakWidth > 0}"
+                    >
+                      <div
+                        style="position: absolute; left: {!attendanceInfo.breakPosition}%; width: {!attendanceInfo.breakWidth}%; height: 100%; background: linear-gradient(135deg, #c6f6d5, #9ae6b4); border: 1px solid #68d391;"
+                      ></div>
+                    </apex:outputPanel>
+                    <!-- Late indicator -->
+                    <apex:outputPanel rendered="{!attendanceInfo.lateWidth > 0}"
+                    >
+                      <div
+                        style="position: absolute; left: {!attendanceInfo.standardStartPosition}%; width: {!attendanceInfo.lateWidth}%; height: 100%; background: linear-gradient(135deg, #fef3c7, #fcd34d); border: 1px solid #f59e0b;"
+                      ></div>
+                    </apex:outputPanel>
+                    <!-- Early leave indicator -->
+                    <apex:outputPanel rendered="{!attendanceInfo.earlyLeaveWidth > 0}"
+                    >
+                      <div
+                        style="position: absolute; left: {!attendanceInfo.earlyLeavePosition}%; width: {!attendanceInfo.earlyLeaveWidth}%; height: 100%; background: linear-gradient(135deg, #fef3c7, #fcd34d); border: 1px solid #f59e0b;"
+                      ></div>
+                    </apex:outputPanel>
+                    <!-- Overtime (after 18:00) -->
+                    <apex:outputPanel rendered="{!attendanceInfo.overtimeWidth > 0}"
+                    >
+                      <div
+                        style="position: absolute; left: {!attendanceInfo.overtimePosition}%; width: {!attendanceInfo.overtimeWidth}%; height: 100%; background: linear-gradient(135deg, #fed7d7, #fc8181); border: 1px solid #f56565;"
+                      ></div>
+                    </apex:outputPanel>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      flex-wrap: wrap;
+                      gap: 1rem;
+                      margin-top: 0.75rem;
+                      font-size: 0.8rem;
+                    "
+                  >
+                    <span
+                      ><span
+                        style="
+                          display: inline-block;
+                          width: 14px;
+                          height: 14px;
+                          background: linear-gradient(135deg, #fef3c7, #fcd34d);
+                          border: 1px solid #f59e0b;
+                          border-radius: 3px;
+                          margin-right: 6px;
+                          vertical-align: middle;
+                        "
+                      ></span
+                      >遅刻／早退</span
+                    >
+                    <span
+                      ><span
+                        style="
+                          display: inline-block;
+                          width: 14px;
+                          height: 14px;
+                          background: linear-gradient(135deg, #e9d5ff, #c4b5fd);
+                          border: 1px solid #a78bfa;
+                          border-radius: 3px;
+                          margin-right: 6px;
+                          vertical-align: middle;
+                        "
+                      ></span
+                      >休暇</span
+                    >
+                    <span
+                      ><span
+                        style="
+                          display: inline-block;
+                          width: 14px;
+                          height: 14px;
+                          background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+                          border: 1px solid #68d391;
+                          border-radius: 3px;
+                          margin-right: 6px;
+                          vertical-align: middle;
+                        "
+                      ></span
+                      >休憩</span
+                    >
+                    <span
+                      ><span
+                        style="
+                          display: inline-block;
+                          width: 14px;
+                          height: 14px;
+                          background: linear-gradient(135deg, #bee3f8, #90cdf4);
+                          border: 1px solid #63b3ed;
+                          border-radius: 3px;
+                          margin-right: 6px;
+                          vertical-align: middle;
+                        "
+                      ></span
+                      >勤務</span
+                    >
+                    <span
+                      ><span
+                        style="
+                          display: inline-block;
+                          width: 14px;
+                          height: 14px;
+                          background: linear-gradient(135deg, #fed7d7, #fc8181);
+                          border: 1px solid #f56565;
+                          border-radius: 3px;
+                          margin-right: 6px;
+                          vertical-align: middle;
+                        "
+                      ></span
+                      >所定時間外</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div
+                style="
+                  padding: 1rem 1.5rem;
+                  border-top: 1px solid #e2e8f0;
+                  display: flex;
+                  justify-content: flex-end;
+                "
+              >
+                <button
+                  onclick="
+                    closeAttendanceModal();
+                    return false;
+                  "
+                  style="
+                    background: #e2e8f0;
+                    border: none;
+                    padding: 0.6rem 1.5rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    color: #1a365d;
+                    font-weight: 500;
+                  "
+                  onmouseover="this.style.background = '#cbd5e0'"
+                  onmouseout="this.style.background = '#e2e8f0'"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </apex:outputPanel>
+        </div>
+
+        <script>
+          function selectWorkDate(dateStr) {
+            document.getElementById(
+              "{!$Component.mainForm.selectedWorkDateInput}"
+            ).value = dateStr;
+            selectWorkDateAction();
+          }
+          function editSchedule(dateStr) {
+            document.getElementById(
+              "{!$Component.mainForm.selectedScheduleDate}"
+            ).value = dateStr;
+            editScheduleAction();
+          }
+          function selectAttDate(dateStr, dateLabel) {
+            document.getElementById(
+              "{!$Component.mainForm.selectedAttDateInput}"
+            ).value = dateStr;
+            loadDailyAttInfoAction();
+          }
+          function showAttendanceModal() {
+            var modal = document.getElementById("attendanceInfoModal");
+            modal.style.display = "flex";
+            document.body.style.overflow = "hidden";
+          }
+          function closeAttendanceModal() {
+            var modal = document.getElementById("attendanceInfoModal");
+            modal.style.display = "none";
+            document.body.style.overflow = "auto";
+          }
+          // Close modal when clicking outside
+          document.addEventListener("click", function (e) {
+            var modal = document.getElementById("attendanceInfoModal");
+            if (e.target === modal) {
+              closeAttendanceModal();
+            }
+          });
+        </script>
+
+        <!-- TAB 3: Requests (申請・承認ワークフロー) -->
+        <div
+          id="tab-requests"
+          class="tab-content {!IF(currentTab=='requests','active','')}"
+        >
+          <div class="att-content" style="grid-template-columns: 1fr 400px">
+            <!-- 申請一覧 -->
+            <div class="att-card">
+              <apex:outputPanel id="requestListPanel">
+                <div class="att-card-header">
+                  <h2>承認待ち申請</h2>
+                  <span class="status-badge status-pending"
+                    >{!pendingRequests.size}件</span
+                  >
+                </div>
+                <div class="request-list">
+                  <div class="request-item request-header">
+                    <div>申請者 / 種別</div>
+                    <div>日付</div>
+                    <div>申請日</div>
+                    <div>ステータス</div>
+                    <div>操作</div>
+                  </div>
+                  <apex:repeat value="{!pendingRequests}" var="req">
+                    <div class="request-item">
+                      <div>
+                        <strong>{!req.applicantName}</strong><br />
+                        <span
+                          style="color: var(--text-light); font-size: 0.78rem"
+                          >{!req.requestType}</span
+                        >
+                      </div>
+                      <div>{!req.dateRange}</div>
+                      <div style="font-size: 0.78rem">{!req.submittedDate}</div>
+                      <div>
+                        <span class="status-badge {!req.statusClass}"
+                          >{!req.status}</span
+                        >
+                      </div>
+                      <div style="display: flex; gap: 0.3rem">
+                        <apex:commandButton value="&#10003; 承認"
+                          action="{!approveRequest}"
+                          styleClass="btn btn-primary"
+                          style="font-size: 0.72rem; padding: 0.3rem 0.5rem"
+                          rerender="mainForm"
+                        >
+                          <apex:param name="reqId"
+                            value="{!req.record.Id}"
+                            assignTo="{!selectedRequestId}"
+                          />
+                        </apex:commandButton>
+                        <apex:commandButton value="&#10007; 却下"
+                          action="{!rejectRequest}"
+                          styleClass="btn btn-outline"
+                          style="
+                            font-size: 0.72rem;
+                            padding: 0.3rem 0.5rem;
+                            color: var(--danger);
+                          "
+                          rerender="mainForm"
+                        >
+                          <apex:param name="reqId"
+                            value="{!req.record.Id}"
+                            assignTo="{!selectedRequestId}"
+                          />
+                        </apex:commandButton>
+                      </div>
+                    </div>
+                  </apex:repeat>
+                  <apex:outputPanel rendered="{!pendingRequests.size == 0}">
+                    <div
+                      style="
+                        padding: 2rem;
+                        text-align: center;
+                        color: var(--text-light);
+                      "
+                    >
+                      承認待ちの申請はありません
+                    </div>
+                  </apex:outputPanel>
+                </div>
+
+                <!-- 自分の申請履歴 -->
+                <div
+                  class="att-card-header"
+                  style="border-top: 1px solid var(--border); margin-top: 1rem"
+                >
+                  <h2>&#128196; 自分の申請履歴</h2>
+                </div>
+                <div class="request-list">
+                  <apex:repeat value="{!myRequests}" var="myReq">
+                    <div class="request-item">
+                      <div>
+                        <strong>{!myReq.requestType}</strong><br />
+                        <span
+                          style="color: var(--text-light); font-size: 0.78rem"
+                          >{!myReq.reason}</span
+                        >
+                      </div>
+                      <div>{!myReq.dateRange}</div>
+                      <div style="font-size: 0.78rem">
+                        {!myReq.submittedDate}
+                      </div>
+                      <div>
+                        <span class="status-badge {!myReq.statusClass}"
+                          >{!myReq.status}</span
+                        >
+                      </div>
+                      <div>
+                        <apex:commandButton value="取消"
+                          action="{!cancelMyRequest}"
+                          styleClass="btn btn-outline"
+                          style="font-size: 0.72rem; padding: 0.3rem 0.5rem"
+                          rendered="{!myReq.status == '下書き' || myReq.status == '申請中' || BEGINS(myReq.status, '承認待ち')}"
+                          rerender="mainForm"
+                        >
+                          <apex:param name="reqId"
+                            value="{!myReq.record.Id}"
+                            assignTo="{!selectedRequestId}"
+                          />
+                        </apex:commandButton>
+                      </div>
+                    </div>
+                  </apex:repeat>
+                  <apex:outputPanel rendered="{!myRequests.size == 0}">
+                    <div
+                      style="
+                        padding: 2rem;
+                        text-align: center;
+                        color: var(--text-light);
+                      "
+                    >
+                      申請履歴はありません
+                    </div>
+                  </apex:outputPanel>
+                </div>
+              </apex:outputPanel>
+            </div>
+
+            <!-- 新規申請フォーム -->
+            <div class="att-card">
+              <div class="att-card-header">
+                <h2>&#128221; 新規申請</h2>
+              </div>
+              <div class="request-form">
+                <apex:outputPanel id="requestFormPanel">
+                  <apex:pageMessages id="requestMessages" />
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>申請種別 <span style="color: red">*</span></label>
+                      <apex:selectList value="{!newLeaveRequest.RequestType__c}"
+                        size="1"
+                        styleClass="form-control"
+                      >
+                        <apex:selectOptions value="{!requestTypeOptions}" />
+                      </apex:selectList>
+                    </div>
+                    <div class="form-group">
+                      <label>承認者 <span style="color: red">*</span></label>
+                      <apex:selectList value="{!newLeaveRequest.Approver1__c}"
+                        size="1"
+                        styleClass="form-control"
+                      >
+                        <apex:selectOptions value="{!approverOptions}" />
+                      </apex:selectList>
+                    </div>
+                    <div class="form-group">
+                      <label>開始日 <span style="color: red">*</span></label>
+                      <apex:input type="date"
+                        value="{!requestStartDate}"
+                        styleClass="form-control"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>終了日</label>
+                      <apex:input type="date"
+                        value="{!requestEndDate}"
+                        styleClass="form-control"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>残業時間 (時間)</label>
+                      <apex:input type="number"
+                        value="{!requestOvertimeHours}"
+                        html-placeholder="残業申請時のみ"
+                        styleClass="form-control"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>二次承認者 (任意)</label>
+                      <apex:selectList value="{!newLeaveRequest.Approver2__c}"
+                        size="1"
+                        styleClass="form-control"
+                      >
+                        <apex:selectOptions value="{!approverOptions}" />
+                      </apex:selectList>
+                    </div>
+                    <div class="form-group full-width">
+                      <label>理由 <span style="color: red">*</span></label>
+                      <apex:inputTextarea value="{!newLeaveRequest.Reason__c}"
+                        rows="3"
+                        styleClass="form-control"
+                      />
+                    </div>
+                  </div>
+                  <div style="margin-top: 1rem; text-align: right">
+                    <apex:actionStatus id="submitStatus">
+                      <apex:facet name="start">
+                        <span style="color: #666">処理中...</span>
+                      </apex:facet>
+                    </apex:actionStatus>
+                    <apex:commandButton value="申請を提出"
+                      action="{!submitLeaveRequest}"
+                      styleClass="btn btn-primary"
+                    />
+                  </div>
+                </apex:outputPanel>
+              </div>
+
+              <!-- 申請種別説明 -->
+              <div
+                style="
+                  padding: 1rem;
+                  font-size: 0.78rem;
+                  color: var(--text-light);
+                "
+              >
+                <strong>申請種別について:</strong>
+                <ul style="margin: 0.5rem 0 0 1rem; padding: 0">
+                  <li><b>有給休暇</b> - 年次有給休暇の取得</li>
+                  <li><b>半休</b> - 午前または午後のみ休暇</li>
+                  <li><b>残業申請</b> - 事前の残業承認申請</li>
+                  <li><b>休日出勤</b> - 休日の勤務申請</li>
+                  <li><b>打刻修正</b> - 打刻忘れ等の修正依頼</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End TAB 3: Requests -->
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

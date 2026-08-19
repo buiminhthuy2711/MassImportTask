@@ -1,0 +1,531 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:component controller="JIP_HRSidebarController">
+  <apex:attribute name="activePage"
+    type="String"
+    description="The current active page: employee, organization, attendance, salary, skill, workflow, document, dashboard, security"
+    required="true"
+  />
+
+  <!-- Login Check - Redirect if not logged in -->
+  <apex:outputPanel rendered="{!NOT(isLoggedIn)}">
+    <!-- 調査中 -->
+    <!-- <apex:outputPanel rendered="false"> -->
+    <script>
+      // Not logged in - redirect to login page
+      window.location.href = "{!$Page.JIP_SystemLoginPage}";
+    </script>
+    <div
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #f0f4f8;
+      "
+    >
+      <div style="text-align: center; color: #4a5568">
+        <div style="font-size: 2rem; margin-bottom: 1rem">&#128274;</div>
+        <div>ログインページへ移動中...</div>
+      </div>
+    </div>
+  </apex:outputPanel>
+
+  <!-- Only show sidebar if logged in -->
+  <apex:outputPanel rendered="{!isLoggedIn}">
+    <!-- 調査中 -->
+    <!-- <apex:outputPanel rendered="true"> -->
+
+    <style>
+      /* ===== HR SIDEBAR ===== */
+      .hr-sidebar {
+        width: 220px;
+        background: linear-gradient(180deg, #1a365d 0%, #2c5282 100%);
+        color: #fff;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+      }
+      .hr-sidebar-header {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 1rem 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .hr-sidebar-header .logo-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #42e1ac, #31ce85);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .hr-sidebar-header .system-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .hr-sidebar-header .system-sub {
+        font-size: 0.7rem;
+        opacity: 0.7;
+      }
+
+      /* Menu Group */
+      .hr-menu-group {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .hr-menu-group:last-child {
+        border-bottom: none;
+      }
+      .hr-menu-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.5);
+        padding: 0 1rem 0.4rem;
+        font-weight: 600;
+      }
+      .hr-sidebar-nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .hr-sidebar-nav li {
+        margin: 1px 0;
+      }
+      .hr-sidebar-nav li a {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 1rem;
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        font-size: 0.82rem;
+        transition: all 0.15s;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+      }
+      .hr-sidebar-nav li a:hover {
+        background: rgba(65, 188, 186, 0.1);
+        border-left-color: rgba(21, 156, 122, 0.3);
+      }
+      .hr-sidebar-nav li.active a {
+        background: rgba(66, 153, 225, 0.3);
+        color: #fff;
+        font-weight: 600;
+        border-left-color: #4299e1;
+      }
+      .hr-sidebar-nav .nav-icon {
+        font-size: 1rem;
+        width: 22px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+      .hr-sidebar-nav .nav-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .hr-sidebar-nav .nav-badge {
+        margin-left: auto;
+        background: #e53e3e;
+        color: #fff;
+        font-size: 0.65rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .hr-sidebar-nav .nav-new {
+        background: #38a169;
+      }
+
+      /* Submenu */
+      .hr-submenu {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        background: rgba(0, 0, 0, 0.15);
+        display: none;
+      }
+      .hr-sidebar-nav li.expanded .hr-submenu {
+        display: block;
+      }
+      .hr-submenu li a {
+        padding-left: 2.8rem;
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .hr-submenu li a:hover {
+        color: #fff;
+      }
+      .hr-submenu li.active a {
+        background: rgba(66, 153, 225, 0.25);
+        color: #fff;
+      }
+
+      /* Toggle arrow */
+      .nav-toggle {
+        margin-left: auto;
+        font-size: 0.7rem;
+        transition: transform 0.2s;
+      }
+      .hr-sidebar-nav li.expanded .nav-toggle {
+        transform: rotate(90deg);
+      }
+
+      @media (max-width: 900px) {
+        .hr-sidebar {
+          width: 56px;
+        }
+        .hr-sidebar-header .system-name,
+        .hr-sidebar-header .system-sub,
+        .hr-menu-label,
+        .hr-sidebar-nav .nav-text,
+        .hr-sidebar-nav .nav-badge,
+        .nav-toggle {
+          display: none;
+        }
+        .hr-sidebar-nav li a {
+          justify-content: center;
+          padding: 0.7rem;
+        }
+        .hr-sidebar-nav .nav-icon {
+          width: auto;
+        }
+        .hr-user-section {
+          padding: 0.4rem;
+        }
+        .hr-user-info {
+          padding: 0.4rem;
+          justify-content: center;
+        }
+        .hr-user-details,
+        .logout-text,
+        .profile-text,
+        .hr-user-type {
+          display: none;
+        }
+        .hr-user-actions {
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+        .hr-logout-btn,
+        .hr-profile-btn {
+          padding: 0.5rem;
+        }
+      }
+
+      /* User Info Section */
+      .hr-user-section {
+        margin-top: auto;
+        padding: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.15) 0%,
+          rgba(0, 0, 0, 0.25) 100%
+        );
+      }
+      .hr-user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        margin-bottom: 0.6rem;
+      }
+      .hr-user-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #38b2ac, #319795);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(56, 178, 172, 0.3);
+        overflow: hidden;
+      }
+      .hr-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+      }
+      .hr-user-details {
+        overflow: hidden;
+        flex: 1;
+      }
+      .hr-user-name {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.3;
+      }
+      .hr-user-role {
+        font-size: 0.68rem;
+        color: #81e6d9;
+        font-weight: 500;
+      }
+      .hr-user-type {
+        margin-top: 0.2rem;
+      }
+      .login-type-badge {
+        display: inline-block;
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.58rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      .login-type-badge.guest {
+        background: linear-gradient(135deg, #ed8936, #dd6b20);
+        color: #fff;
+      }
+      .login-type-badge.sf-user {
+        background: linear-gradient(135deg, #4299e1, #3182ce);
+        color: #fff;
+      }
+      .hr-user-actions {
+        display: flex;
+        gap: 0.4rem;
+      }
+      .hr-profile-btn,
+      .hr-logout-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        flex: 1;
+        padding: 0.55rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+        border: none;
+      }
+      .hr-profile-btn {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .hr-profile-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        text-decoration: none;
+      }
+      .hr-logout-btn {
+        background: rgba(245, 101, 101, 0.15);
+        color: #fc8181;
+      }
+      .hr-logout-btn:hover {
+        background: rgba(245, 101, 101, 0.3);
+        color: #fff;
+        text-decoration: none;
+      }
+      .profile-icon,
+      .logout-icon {
+        font-size: 0.9rem;
+      }
+      .profile-text,
+      .logout-text {
+        display: inline;
+      }
+      .profile-icon {
+        font-size: 1rem;
+      }
+    </style>
+
+    <script>
+      function toggleHRSubmenu(element) {
+        var li = element.closest("li");
+        if (li) {
+          li.classList.toggle("expanded");
+        }
+        return false;
+      }
+    </script>
+
+    <div class="hr-sidebar">
+      <!-- Header -->
+      <div class="hr-sidebar-header">
+        <div class="logo-icon">&#128100;</div>
+        <div>
+          <div class="system-name">社員管理システム</div>
+          <div class="system-sub">HR Management</div>
+        </div>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="hr-menu-group">
+        <div class="hr-menu-label">Main Menu</div>
+        <ul class="hr-sidebar-nav">
+          <!-- ① 基本情報管理 -->
+          <li class="{!IF(activePage == 'employee', 'active', '')}">
+            <a href="{!$Page.JIP_WorkerManagementPage}">
+              <span class="nav-icon">&#128100;</span>
+              <span class="nav-text">基本情報管理</span>
+            </a>
+          </li>
+
+          <!-- ② 組織・権限管理 -->
+          <li class="{!IF(activePage == 'organization', 'active', '')}">
+            <a href="{!$Page.JIP_HROrganizationPage}">
+              <span class="nav-icon">&#127970;</span>
+              <span class="nav-text">組織・権限管理</span>
+            </a>
+          </li>
+
+          <!-- ③ 勤怠管理 -->
+          <li class="{!IF(activePage == 'attendance', 'active', '')}">
+            <a href="{!$Page.JIP_HRAttendancePage}">
+              <span class="nav-icon">&#128336;</span>
+              <span class="nav-text">勤怠管理</span>
+              <span class="nav-badge">3</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- HR Operations -->
+      <div class="hr-menu-group">
+        <div class="hr-menu-label">HR Operations</div>
+        <ul class="hr-sidebar-nav">
+          <!-- ④ 給与・評価管理 -->
+          <li class="{!IF(activePage == 'salary', 'active', '')}">
+            <a href="{!$Page.JIP_HRSalaryPage}">
+              <span class="nav-icon">&#128176;</span>
+              <span class="nav-text">給与・評価管理</span>
+            </a>
+          </li>
+
+          <!-- ⑤ スキル・キャリア -->
+          <li class="{!IF(activePage == 'skill', 'active', '')}">
+            <a href="{!$Page.JIP_HRSkillPage}">
+              <span class="nav-icon">&#127891;</span>
+              <span class="nav-text">スキル・キャリア</span>
+              <span class="nav-badge nav-new">New</span>
+            </a>
+          </li>
+
+          <!-- ⑥ ワークフロー -->
+          <li class="{!IF(activePage == 'workflow', 'active', '')}">
+            <a href="{!$Page.JIP_HRWorkflowPage}">
+              <span class="nav-icon">&#128196;</span>
+              <span class="nav-text">申請・ワークフロー</span>
+              <span class="nav-badge">5</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Documents & Reports -->
+      <div class="hr-menu-group">
+        <div class="hr-menu-label">ドキュメント・レポート</div>
+        <ul class="hr-sidebar-nav">
+          <!-- ⑦ ドキュメント管理 -->
+          <li class="{!IF(activePage == 'document', 'active', '')}">
+            <a href="{!$Page.JIP_HRDocumentPage}">
+              <span class="nav-icon">&#128459;</span>
+              <span class="nav-text">ドキュメント管理</span>
+            </a>
+          </li>
+
+          <!-- ⑧ レポート・分析 -->
+          <li class="{!IF(activePage == 'dashboard', 'active', '')}">
+            <a href="{!$Page.JIP_HRDashboardPage}">
+              <span class="nav-icon">&#128202;</span>
+              <span class="nav-text">レポート・分析</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- System -->
+      <div class="hr-menu-group">
+        <div class="hr-menu-label">System</div>
+        <ul class="hr-sidebar-nav">
+          <!-- ⑨ セキュリティ -->
+          <li class="{!IF(activePage == 'security', 'active', '')}">
+            <a href="{!$Page.JIP_HRSecurityPage}">
+              <span class="nav-icon">&#128274;</span>
+              <span class="nav-text">セキュリティ</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- User Info Section -->
+      <div class="hr-user-section">
+        <div class="hr-user-info">
+          <div class="hr-user-avatar">
+            <apex:outputPanel rendered="{!ISBLANK(avatarUrl)}">
+              &#128100;
+            </apex:outputPanel>
+            <apex:image url="{!avatarUrl}"
+              rendered="{!NOT(ISBLANK(avatarUrl))}"
+              styleClass="hr-avatar-img"
+            />
+          </div>
+          <div class="hr-user-details">
+            <div class="hr-user-name">{!currentWorkerName}</div>
+            <div class="hr-user-role">{!roleLabel}</div>
+            <div class="hr-user-type">
+              <apex:outputPanel rendered="{!currentLoginType == 'Guest'}">
+                <span class="login-type-badge guest">ゲスト</span>
+              </apex:outputPanel>
+              <apex:outputPanel rendered="{!currentLoginType == 'SalesforceUser'}"
+              >
+                <span class="login-type-badge sf-user">SF連携</span>
+              </apex:outputPanel>
+            </div>
+          </div>
+        </div>
+        <div class="hr-user-actions">
+          <a
+            href="{!$Page.JIP_WorkerDetailsPage}?id={!currentWorkerId}"
+            class="hr-profile-btn"
+            title="プロフィール"
+          >
+            <span class="profile-icon" style="color: white; font-size: x-large"
+              >&#9881;</span
+            >
+            <!-- <span class="profile-text" >プロフィール</span> -->
+          </a>
+          <a href="{!logoutUrl}" class="hr-logout-btn" title="ログアウト">
+            <span class="logout-icon" style="color: white; font-size: large"
+              >&#9211;</span
+            >
+            <!-- <span class="logout-text">ログアウト</span> -->
+          </a>
+        </div>
+      </div>
+    </div>
+  </apex:outputPanel>
+</apex:component>

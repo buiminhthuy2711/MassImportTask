@@ -1,0 +1,1624 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_GanttChartController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --green: #2baf6a;
+      --green-dark: #239b5b;
+      --green-darker: #1a7a47;
+      --green-light: #e6f7ee;
+      --orange: #e8833a;
+      --red: #d9534f;
+      --blue: #5b9bd5;
+      --gray: #888;
+      --bg: #f5f5f5;
+      --white: #ffffff;
+      --text: #333;
+      --text-light: #666;
+      --border: #e0e0e0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .gc-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* ===== MAIN ===== */
+    .main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .gc-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .gc-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .project-select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* Title row */
+    .gc-title-row {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    /* Filter */
+    .gc-filter {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem;
+    }
+    .gc-filter-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .filter-item label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+    .filter-item select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      min-width: 120px;
+    }
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--white);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-sm:hover {
+      background: #f0f0f0;
+    }
+
+    /* Gantt controls */
+    .gc-controls {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .gc-controls label {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .gc-controls select,
+    .gc-controls input[type="date"] {
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+    .btn-today {
+      padding: 0.25rem 0.6rem;
+      border: 1px solid var(--green);
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--green);
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-today:hover {
+      background: var(--green-light);
+    }
+    .btn-nav {
+      padding: 0.25rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--white);
+      font-size: 0.9rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .btn-nav:hover {
+      background: #f0f0f0;
+    }
+
+    /* ===== GANTT AREA ===== */
+    .gantt-area {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Left table */
+    .gantt-left {
+      width: 450px;
+      flex-shrink: 0;
+      border-right: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--white);
+      transition: width 0.2s;
+    }
+    .gantt-left.collapsed {
+      width: 0;
+      overflow: hidden;
+    }
+    .gantt-left-header {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: #f8f8f8;
+      font-size: 0.78rem;
+      font-weight: 600;
+      min-height: 55px;
+      align-items: flex-end;
+    }
+    .gantt-left-header .col-toggle {
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      color: var(--green);
+      font-size: 0.78rem;
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+    .gantt-left-header .col-subject {
+      flex: 1;
+      padding: 0.3rem 0.5rem;
+    }
+    .gantt-left-header .col-assignee {
+      width: 70px;
+      padding: 0.3rem 0.5rem;
+      text-align: center;
+    }
+    .gantt-left-header .col-status {
+      width: 70px;
+      padding: 0.3rem 0.5rem;
+      text-align: center;
+    }
+    .gantt-left-body {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .gantt-left-row {
+      display: flex;
+      border-bottom: 1px solid #f0f0f0;
+      min-height: 36px;
+      align-items: center;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .gantt-left-row:hover {
+      background: #f8f8f8;
+    }
+    .gantt-left-row .cell-subject {
+      flex: 1;
+      padding: 0.3rem 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--green);
+      font-weight: 500;
+    }
+    .gantt-left-row .cell-assignee {
+      width: 70px;
+      text-align: center;
+      padding: 0.2rem;
+    }
+    .gantt-left-row .cell-status {
+      width: 70px;
+      text-align: center;
+      padding: 0.2rem;
+    }
+    .assignee-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+    }
+    .status-badge-sm {
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #fff;
+      display: inline-block;
+    }
+    .st-未対応 {
+      background: #ff6666;
+    }
+    .st-処理中 {
+      background: #4db87e;
+    }
+    .st-処理済み {
+      background: #5599dd;
+    }
+    .st-完了 {
+      background: #aaa;
+    }
+
+    /* Right timeline */
+    .gantt-right {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: auto;
+      position: relative;
+    }
+    .gantt-timeline {
+      position: relative;
+      min-width: 100%;
+    }
+    .gantt-timeline-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #f8f8f8;
+      border-bottom: 1px solid var(--border);
+    }
+    .gantt-month-row {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .gantt-month-cell {
+      border-right: 1px solid var(--border);
+      padding: 0.2rem 0.5rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .gantt-day-row {
+      display: flex;
+      font-size: 0.72rem;
+      color: var(--text-light);
+    }
+    .gantt-day-cell {
+      border-right: 1px solid #ececec;
+      text-align: center;
+      padding: 0.15rem 0;
+      min-height: 24px;
+    }
+    .gantt-day-cell.weekend {
+      background: #fafafa;
+    }
+    .gantt-day-cell.today {
+      background: #ffe0e0;
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    /* Body rows */
+    .gantt-body {
+      position: relative;
+    }
+    .gantt-row {
+      display: flex;
+      min-height: 36px;
+      border-bottom: 1px solid #f0f0f0;
+      position: relative;
+    }
+    .gantt-row.group-header {
+      background: #f5f9fc;
+      min-height: 32px;
+    }
+    .gantt-row.group-header .group-label {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gantt-row.group-header .group-count {
+      background: #e0e0e0;
+      color: #666;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .gantt-left-row.group-header {
+      background: #f5f9fc;
+      min-height: 32px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text);
+      padding-left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: default;
+    }
+    .gantt-left-row.group-header:hover {
+      background: #f5f9fc;
+    }
+    .gantt-left-row.group-header .group-count {
+      background: #e0e0e0;
+      color: #666;
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .gantt-cell {
+      border-right: 1px solid #f5f5f5;
+      min-height: 36px;
+    }
+    .gantt-cell.weekend {
+      background: #fafafa;
+    }
+    .gantt-cell.today {
+      background: #fff0f0;
+    }
+
+    /* Bars */
+    .gantt-bar {
+      position: absolute;
+      top: 6px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      padding: 0 6px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 5;
+      user-select: none;
+      transition: box-shadow 0.15s;
+    }
+    .gantt-bar:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .gantt-bar.dragging {
+      opacity: 0.7;
+      cursor: grabbing;
+      z-index: 20;
+    }
+    .gantt-bar .bar-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bar-未対応 {
+      background: #ff9999;
+    }
+    .bar-処理中 {
+      background: #66cc99;
+    }
+    .bar-処理済み {
+      background: #66aaee;
+    }
+    .bar-完了 {
+      background: #bbb;
+    }
+
+    /* Collapse toggle for when collapsed */
+    .gantt-expand-btn {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 15;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 0 4px 4px 0;
+      padding: 0.3rem 0.4rem;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: var(--green);
+      margin-top: 10px;
+    }
+
+    /* ===== TASK POPUP (right slide) ===== */
+    .popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 9000;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .popup-panel {
+      width: 560px;
+      max-width: 90vw;
+      height: 100%;
+      background: var(--white);
+      box-shadow: -4px 0 16px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Popup header */
+    .popup-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa;
+    }
+    .popup-top-icons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .popup-icon-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      transition: background 0.15s;
+    }
+    .popup-icon-btn:hover {
+      background: #e8e8e8;
+    }
+
+    /* Popup task header */
+    .popup-task-header {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .popup-task-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.4rem;
+      font-size: 0.82rem;
+    }
+    .type-badge {
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+      color: #fff;
+    }
+    .type-基本操作 {
+      background: var(--green);
+    }
+    .type-プロジェクト設定 {
+      background: var(--orange);
+    }
+    .type-バグ {
+      background: var(--red);
+    }
+    .type-要望 {
+      background: var(--blue);
+    }
+    .type-タスク {
+      background: #8e6fc0;
+    }
+    .type-その他 {
+      background: var(--gray);
+    }
+    .popup-task-key {
+      font-weight: 700;
+      color: var(--text);
+    }
+    .popup-task-dates {
+      color: var(--text-light);
+      font-size: 0.82rem;
+    }
+    .popup-status-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .popup-task-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* Popup body */
+    .popup-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    /* Description section */
+    .popup-desc-card {
+      border-bottom: 1px solid var(--border);
+      padding: 0;
+    }
+    .popup-desc-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .popup-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+      background: var(--green);
+    }
+    .popup-desc-meta .name {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .popup-desc-meta .date {
+      color: var(--text-light);
+      font-size: 0.78rem;
+      margin-left: 0.5rem;
+    }
+    .popup-desc-body {
+      padding: 0.8rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .popup-star {
+      color: var(--text-light);
+      font-size: 0.82rem;
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    /* Metadata row */
+    .popup-meta {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      gap: 1rem;
+    }
+    .popup-meta-item {
+      flex: 1;
+      min-width: 45%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .popup-meta-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+    .popup-meta-value {
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .popup-meta-sep {
+      border-bottom: 1px solid var(--border);
+      margin: 0;
+      padding: 0.3rem 1rem;
+    }
+    .popup-expand-trigger {
+      text-align: center;
+      padding: 0.3rem;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Comment section in popup */
+    .popup-comments {
+      padding: 0;
+    }
+    .popup-comment-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 0;
+    }
+    .popup-comment-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+    .popup-comment-body {
+      padding: 0 1rem 0.5rem 3rem;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Comment input */
+    .popup-comment-form {
+      border-top: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #fafafa;
+    }
+    .popup-comment-input {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      min-height: 36px;
+    }
+
+    /* Action button styles */
+    .btn-action-primary {
+      padding: 0.3rem 0.8rem;
+      border: none;
+      border-radius: 4px;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-action-primary:hover {
+      background: var(--green-dark);
+    }
+
+    .priority-icon {
+      font-size: 1rem;
+    }
+    .pri-高 {
+      color: #d32f2f;
+    }
+    .pri-中 {
+      color: #ff9800;
+    }
+    .pri-低 {
+      color: #4caf50;
+    }
+
+    /* Messages */
+    .gc-messages {
+      padding: 0 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .gantt-left {
+        width: 280px;
+      }
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <!-- Action Functions -->
+    <apex:actionFunction name="openTaskPopupAF"
+      action="{!openTaskPopup}"
+      reRender="popupArea"
+    >
+      <apex:param name="popupId" value="" assignTo="{!popupTaskId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="updateTaskDatesAF"
+      action="{!updateTaskDates}"
+      reRender="ganttDataHolder"
+      oncomplete="refreshGanttData();"
+    >
+      <apex:param name="dtId" value="" assignTo="{!dragTaskId}" />
+      <apex:param name="dtStart" value="" assignTo="{!dragNewStart}" />
+      <apex:param name="dtEnd" value="" assignTo="{!dragNewEnd}" />
+    </apex:actionFunction>
+
+    <!-- Hidden data holder for rerender -->
+    <apex:outputPanel id="ganttDataHolder">
+      <div id="__ganttDataWrap" style="display: none">
+        <input type="hidden" id="hdnTasks" value="{!tasksJson}" />
+        <input type="hidden" id="hdnStartStr" value="{!ganttStartDateStr}" />
+        <input type="hidden" id="hdnScale" value="{!ganttScale}" />
+        <input
+          type="hidden"
+          id="hdnShowLeft"
+          value="{!IF(showLeftPanel, 'true', 'false')}"
+        />
+        <input type="hidden" id="hdnGrouping" value="{!ganttGrouping}" />
+      </div>
+    </apex:outputPanel>
+
+    <div class="gc-wrap">
+      <!-- LEFT SIDEBAR -->
+      <c:JIP_ProjectSidebar projectId="{!selectedProjectId}"
+        projectName="{!selectedProjectName}"
+        activePage="gantt"
+      />
+
+      <!-- MAIN CONTENT -->
+      <div class="main-content">
+        <!-- Header -->
+        <div class="gc-header">
+          <h1>
+            <apex:selectList value="{!selectedProjectId}"
+              size="1"
+              multiselect="false"
+              styleClass="project-select"
+            >
+              <apex:selectOptions value="{!projectOptions}" />
+              <apex:actionSupport event="onchange"
+                action="{!selectProject}"
+                reRender="mainForm,ganttDataHolder"
+                oncomplete="refreshGanttData();"
+              />
+            </apex:selectList>
+          </h1>
+        </div>
+
+        <!-- Title -->
+        <div class="gc-title-row">&#x2227; {!T['gantt_chart']}</div>
+
+        <!-- Filter bar -->
+        <div class="gc-filter">
+          <div class="gc-filter-row">
+            <div class="filter-item">
+              <label>{!T['type']}</label>
+              <apex:selectList value="{!filterType}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!typeOptions}" />
+              </apex:selectList>
+            </div>
+            <div class="filter-item">
+              <label>{!T['status']}</label>
+              <apex:selectList value="{!filterStatus}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!statusOptions}" />
+              </apex:selectList>
+            </div>
+            <div class="filter-item">
+              <label>{!T['category']}</label>
+              <apex:selectList value="{!filterCategory}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!categoryOptions}" />
+              </apex:selectList>
+            </div>
+            <div class="filter-item">
+              <label>{!T['milestone']}</label>
+              <apex:selectList value="{!filterMilestone}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!milestoneOptions}" />
+              </apex:selectList>
+            </div>
+            <div class="filter-item">
+              <label>{!T['assignee']}</label>
+              <apex:selectList value="{!filterAssignee}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!assigneeOptions}" />
+              </apex:selectList>
+            </div>
+            <apex:commandButton value="&#x21BB;"
+              action="{!clearFilters}"
+              reRender="mainForm,ganttDataHolder"
+              oncomplete="refreshGanttData();"
+              styleClass="btn-sm"
+              style="align-self: flex-end"
+              title="{!T['clear']}"
+            />
+            <apex:commandButton value="{!T['search']}"
+              action="{!applyFilters}"
+              reRender="ganttDataHolder"
+              oncomplete="refreshGanttData();"
+              styleClass="btn-sm"
+              style="align-self: flex-end"
+            />
+          </div>
+        </div>
+
+        <!-- Gantt controls -->
+        <div class="gc-controls">
+          <div
+            class="filter-item"
+            style="flex-direction: row; align-items: center; gap: 0.4rem"
+          >
+            <label>{!T['start_date']}</label>
+            <apex:input type="date"
+              value="{!ganttStartDate}"
+              style="
+                padding: 0.25rem 0.4rem;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                font-size: 0.82rem;
+              "
+            />
+          </div>
+          <apex:commandButton value="{!T['today']}"
+            action="{!goToday}"
+            reRender="ganttDataHolder"
+            oncomplete="refreshGanttData();"
+            styleClass="btn-today"
+          />
+          <apex:commandButton value="&#x276E;"
+            action="{!goPrev}"
+            reRender="ganttDataHolder"
+            oncomplete="refreshGanttData();"
+            styleClass="btn-nav"
+          />
+          <apex:commandButton value="&#x276F;"
+            action="{!goNext}"
+            reRender="ganttDataHolder"
+            oncomplete="refreshGanttData();"
+            styleClass="btn-nav"
+          />
+          <div
+            class="filter-item"
+            style="flex-direction: row; align-items: center; gap: 0.4rem"
+          >
+            <label>{!T['scale']}</label>
+            <apex:selectList value="{!ganttScale}"
+              size="1"
+              multiselect="false"
+              style="padding: 0.25rem; font-size: 0.82rem"
+            >
+              <apex:selectOptions value="{!scaleOptions}" />
+              <apex:actionSupport event="onchange"
+                action="{!changeScale}"
+                reRender="ganttDataHolder"
+                oncomplete="refreshGanttData();"
+              />
+            </apex:selectList>
+          </div>
+          <div
+            class="filter-item"
+            style="flex-direction: row; align-items: center; gap: 0.4rem"
+          >
+            <label>{!T['grouping']}</label>
+            <apex:selectList value="{!ganttGrouping}"
+              size="1"
+              multiselect="false"
+              style="padding: 0.25rem; font-size: 0.82rem"
+            >
+              <apex:selectOptions value="{!groupingOptions}" />
+              <apex:actionSupport event="onchange"
+                action="{!changeGrouping}"
+                reRender="ganttDataHolder"
+                oncomplete="refreshGanttData();"
+              />
+            </apex:selectList>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="gc-messages">
+          <apex:messages layout="list" />
+        </div>
+
+        <!-- Gantt chart area (rendered by JavaScript) -->
+        <div class="gantt-area" id="ganttArea">
+          <!-- Left task list panel -->
+          <div class="gantt-left" id="ganttLeft">
+            <div class="gantt-left-header">
+              <div
+                class="col-toggle"
+                id="toggleBtn"
+                onclick="toggleLeftPanel()"
+              >
+                &#x2190; {!T['collapse']}
+              </div>
+              <div class="col-subject">{!T['subject']}</div>
+              <div class="col-assignee">{!T['assignee']}</div>
+              <div class="col-status">{!T['status']}</div>
+            </div>
+            <div class="gantt-left-body" id="ganttLeftBody">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <!-- Right chart -->
+          <div class="gantt-right" id="ganttRight">
+            <div class="gantt-timeline" id="ganttTimeline">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TASK DETAIL POPUP ===== -->
+    <apex:outputPanel id="popupArea">
+      <apex:outputPanel rendered="{!showTaskPopup && selectedTask != null}">
+        <div class="popup-overlay" onclick="closePopupOverlay(event)">
+          <div class="popup-panel" onclick="event.stopPropagation()">
+            <!-- Top bar -->
+            <div class="popup-top-bar">
+              <div class="popup-top-icons">
+                <a
+                  href="{!$Page.JIP_ProjectTaskDetailPage}?id={!selectedTask.Id}"
+                  class="popup-icon-btn"
+                  title="詳細を開く"
+                  style="text-decoration: none"
+                  >&#x2197;</a
+                >
+                <button type="button" class="popup-icon-btn" title="編集">
+                  &#x270E;
+                </button>
+                <button type="button" class="popup-icon-btn">&#x22EF;</button>
+              </div>
+              <apex:commandButton value="&#x2715;"
+                action="{!closeTaskPopup}"
+                reRender="popupArea"
+                styleClass="popup-icon-btn"
+                style="font-size: 1.1rem"
+              />
+            </div>
+
+            <!-- Task header info -->
+            <div class="popup-task-header">
+              <div class="popup-task-meta">
+                <span class="type-badge type-{!selectedTask.TaskType__c}"
+                  >{!selectedTask.TaskType__c}</span
+                >
+                <span class="popup-task-key">{!selectedTask.Name}</span>
+                <span style="color: var(--text-light)">&#x25A0;</span>
+                <span class="popup-task-dates">
+                  <apex:outputText value="{0,date,yyyy/MM/dd}"
+                    rendered="{!selectedTask.StartDate__c != null}"
+                  >
+                    <apex:param value="{!selectedTask.StartDate__c}" />
+                  </apex:outputText>
+                  <apex:outputPanel rendered="{!selectedTask.StartDate__c != null && selectedTask.DueDate__c != null}"
+                  >
+                    &nbsp;&#x2192;&nbsp;
+                  </apex:outputPanel>
+                  <apex:outputText value="{0,date,yyyy/MM/dd}"
+                    rendered="{!selectedTask.DueDate__c != null}"
+                  >
+                    <apex:param value="{!selectedTask.DueDate__c}" />
+                  </apex:outputText>
+                </span>
+                <span
+                  class="popup-status-badge st-{!selectedTask.Status__c}"
+                  style="margin-left: auto"
+                  >{!selectedTask.Status__c}</span
+                >
+              </div>
+              <h2 class="popup-task-title">{!selectedTask.Subject__c}</h2>
+            </div>
+
+            <!-- Scrollable body -->
+            <div class="popup-body">
+              <!-- Description card -->
+              <div class="popup-desc-card">
+                <div class="popup-desc-header">
+                  <span class="popup-avatar">
+                    {!IF(selectedTask.RegisteredBy__c != null,
+                    LEFT(selectedTask.RegisteredBy__c, 1), '?')}
+                  </span>
+                  <div class="popup-desc-meta">
+                    <span class="name">{!selectedTask.RegisteredBy__c}</span>
+                    <span class="date">
+                      <apex:outputText value="{0,date,yyyy/MM/dd HH:mm:ss}">
+                        <apex:param value="{!selectedTask.CreatedDate}" />
+                      </apex:outputText>
+                    </span>
+                  </div>
+                  <span class="popup-star">&#x2606; 0</span>
+                </div>
+                <div class="popup-desc-body">
+                  <apex:outputPanel rendered="{!selectedTask.Description__c != null}"
+                  >
+                    <apex:outputText value="{!selectedTask.Description__c}"
+                      escape="false"
+                    />
+                  </apex:outputPanel>
+                  <apex:outputPanel rendered="{!selectedTask.Description__c == null}"
+                  >
+                    <span style="color: #999; font-style: italic"
+                      >詳細はありません</span
+                    >
+                  </apex:outputPanel>
+                </div>
+              </div>
+
+              <!-- Metadata -->
+              <div class="popup-meta">
+                <div class="popup-meta-item">
+                  <span class="popup-meta-label">優先度</span>
+                  <span class="popup-meta-value">
+                    <apex:outputPanel rendered="{!selectedTask.Priority__c == '高'}"
+                    >
+                      <span class="priority-icon pri-高">&#x2191;</span>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!selectedTask.Priority__c == '中'}"
+                    >
+                      <span class="priority-icon pri-中">&#x2192;</span>
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!selectedTask.Priority__c == '低'}"
+                    >
+                      <span class="priority-icon pri-低">&#x2193;</span>
+                    </apex:outputPanel>
+                    {!selectedTask.Priority__c}
+                  </span>
+                </div>
+                <div class="popup-meta-item">
+                  <span class="popup-meta-label">担当者</span>
+                  <span class="popup-meta-value">
+                    <apex:outputPanel rendered="{!selectedTask.Assignee__c != null}"
+                    >
+                      <span
+                        class="popup-avatar"
+                        style="width: 22px; height: 22px; font-size: 0.6rem"
+                        >{!popupAssigneeInitial}</span
+                      >
+                      {!popupAssigneeName}
+                    </apex:outputPanel>
+                    <apex:outputPanel rendered="{!selectedTask.Assignee__c == null}"
+                      >-</apex:outputPanel>
+                  </span>
+                </div>
+                <div class="popup-meta-item">
+                  <span class="popup-meta-label">カテゴリー</span>
+                  <span class="popup-meta-value"
+                    >{!IF(selectedTask.Category__c != null,
+                    selectedTask.Category__c, '-')}</span
+                  >
+                </div>
+                <div class="popup-meta-item">
+                  <span class="popup-meta-label">マイルストーン</span>
+                  <span class="popup-meta-value"
+                    >{!IF(selectedTask.Milestone__c != null,
+                    selectedTask.Milestone__c, '-')}</span
+                  >
+                </div>
+              </div>
+
+              <!-- Expand trigger -->
+              <div class="popup-expand-trigger">&#x2228;</div>
+
+              <!-- Comments -->
+              <div class="popup-comments">
+                <apex:repeat value="{!taskComments}" var="c">
+                  <div class="popup-comment-item">
+                    <div class="popup-comment-header">
+                      <span
+                        class="popup-avatar"
+                        style="width: 26px; height: 26px; font-size: 0.65rem"
+                      >
+                        {!LEFT(IF(c.CommentBy__c != null, c.CommentBy__c, '?'),
+                        1)}
+                      </span>
+                      <div class="popup-desc-meta">
+                        <span class="name" style="font-size: 0.85rem"
+                          >{!c.CommentBy__c}</span
+                        >
+                        <span class="date">
+                          <apex:outputText value="{0,date,yyyy/MM/dd HH:mm:ss}">
+                            <apex:param value="{!c.CreatedDate}" />
+                          </apex:outputText>
+                        </span>
+                      </div>
+                      <span class="popup-star">&#x2606; 0</span>
+                      <button
+                        type="button"
+                        class="popup-icon-btn"
+                        style="font-size: 0.9rem"
+                      >
+                        &#x22EF;
+                      </button>
+                    </div>
+                    <div class="popup-comment-body">{!c.CommentBody__c}</div>
+                  </div>
+                </apex:repeat>
+              </div>
+            </div>
+
+            <!-- Comment input -->
+            <div class="popup-comment-form">
+              <apex:inputText value="{!newComment}"
+                styleClass="popup-comment-input"
+                html-placeholder="コメント（@を入力してメンバーに通知）"
+              />
+              <apex:commandButton value="登録"
+                action="{!addComment}"
+                reRender="popupArea"
+                styleClass="btn-action-primary"
+              />
+            </div>
+          </div>
+        </div>
+      </apex:outputPanel>
+    </apex:outputPanel>
+  </apex:form>
+
+  <script>
+    // ===== DATA FROM APEX =====
+    var tasksJson = {!tasksJson};
+    var ganttStartStr = '{!ganttStartDateStr}';
+    var ganttScale = '{!JSENCODE(ganttScale)}';
+    var ganttGrouping = '{!JSENCODE(ganttGrouping)}';
+    var showLeftPanel = {!showLeftPanel};
+
+    // ===== CONSTANTS =====
+    var DAY_WIDTH = ganttScale === '日' ? 30 : (ganttScale === '週' ? 12 : 4);
+    var TOTAL_DAYS = ganttScale === '日' ? 60 : (ganttScale === '週' ? 120 : 365);
+
+    function parseLocalDate(s) {
+        if (!s) return null;
+        var p = s.split('-');
+        return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+    }
+    function formatLocalDate(d) {
+        var y = d.getFullYear();
+        var m = ('0' + (d.getMonth() + 1)).slice(-2);
+        var dd = ('0' + d.getDate()).slice(-2);
+        return y + '-' + m + '-' + dd;
+    }
+    function addDays(d, n) {
+        var r = new Date(d);
+        r.setDate(r.getDate() + n);
+        return r;
+    }
+    function daysBetween(a, b) {
+        return Math.round((b - a) / (1000 * 60 * 60 * 24));
+    }
+
+    var ganttStart = parseLocalDate(ganttStartStr);
+    var ganttEnd = addDays(ganttStart, TOTAL_DAYS);
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    // ===== GROUPING =====
+    function getGroupedTasks() {
+        if (ganttGrouping === 'なし' || !ganttGrouping) {
+            return [{ name: '', tasks: tasksJson }];
+        }
+
+        var groups = {};
+        var groupOrder = [];
+
+        for (var i = 0; i < tasksJson.length; i++) {
+            var t = tasksJson[i];
+            var groupKey = '';
+
+            if (ganttGrouping === '担当者') {
+                groupKey = t.assignee || '未割当';
+            } else if (ganttGrouping === '種別') {
+                groupKey = t.type || '未設定';
+            } else if (ganttGrouping === 'カテゴリー') {
+                groupKey = t.category || '未設定';
+            }
+
+            if (!groups[groupKey]) {
+                groups[groupKey] = [];
+                groupOrder.push(groupKey);
+            }
+            groups[groupKey].push(t);
+        }
+
+        var result = [];
+        for (var j = 0; j < groupOrder.length; j++) {
+            var key = groupOrder[j];
+            result.push({ name: key, tasks: groups[key] });
+        }
+        return result;
+    }
+
+    // ===== RENDER =====
+    function renderGantt() {
+        renderLeftPanel();
+        renderTimeline();
+    }
+
+    function renderLeftPanel() {
+        var body = document.getElementById('ganttLeftBody');
+        if (!body) return;
+        var html = '';
+        var grouped = getGroupedTasks();
+
+        for (var g = 0; g < grouped.length; g++) {
+            var group = grouped[g];
+
+            // Group header (only if grouping is enabled)
+            if (group.name) {
+                html += '<div class="gantt-left-row group-header">';
+                html += escHtml(group.name);
+                html += '<span class="group-count">' + group.tasks.length + '</span>';
+                html += '</div>';
+            }
+
+            // Tasks in group
+            for (var i = 0; i < group.tasks.length; i++) {
+                var t = group.tasks[i];
+                var stCls = 'st-' + (t.status || '');
+                html += '<div class="gantt-left-row" onclick="openTaskPopupAF(\'' + t.id + '\')">';
+                html += '<div class="cell-subject" title="' + escHtml(t.subject || '') + '">' + escHtml(t.subject || '') + '</div>';
+                html += '<div class="cell-assignee">';
+                if (t.assigneeInitial) {
+                    html += '<span class="assignee-dot">' + escHtml(t.assigneeInitial) + '</span>';
+                }
+                html += '</div>';
+                html += '<div class="cell-status"><span class="status-badge-sm ' + stCls + '">' + escHtml(t.status || '') + '</span></div>';
+                html += '</div>';
+            }
+        }
+        body.innerHTML = html;
+    }
+
+    function renderTimeline() {
+        var timeline = document.getElementById('ganttTimeline');
+        if (!timeline) return;
+
+        // Generate date list
+        var dates = [];
+        for (var i = 0; i < TOTAL_DAYS; i++) {
+            dates.push(addDays(ganttStart, i));
+        }
+
+        var totalWidth = dates.length * DAY_WIDTH;
+        timeline.style.width = totalWidth + 'px';
+
+        // Build month row
+        var months = {};
+        for (var i = 0; i < dates.length; i++) {
+            var key = dates[i].getFullYear() + '年' + (dates[i].getMonth() + 1) + '月';
+            if (!months[key]) months[key] = 0;
+            months[key]++;
+        }
+        var monthHtml = '';
+        for (var k in months) {
+            monthHtml += '<div class="gantt-month-cell" style="width:' + (months[k] * DAY_WIDTH) + 'px;">' + k + '</div>';
+        }
+
+        // Build day row
+        var dayHtml = '';
+        for (var i = 0; i < dates.length; i++) {
+            var d = dates[i];
+            var day = d.getDate();
+            var dow = d.getDay();
+            var cls = 'gantt-day-cell';
+            if (dow === 0 || dow === 6) cls += ' weekend';
+            if (d.getTime() === today.getTime()) cls += ' today';
+            dayHtml += '<div class="' + cls + '" style="width:' + DAY_WIDTH + 'px;">' + day + '</div>';
+        }
+
+        // Build body rows with grouping
+        var bodyHtml = '';
+        var grouped = getGroupedTasks();
+
+        for (var g = 0; g < grouped.length; g++) {
+            var group = grouped[g];
+
+            // Group header row (only if grouping is enabled)
+            if (group.name) {
+                var groupRowHtml = '<div class="gantt-row group-header">';
+                // Background cells
+                for (var j = 0; j < dates.length; j++) {
+                    var d = dates[j];
+                    var dow = d.getDay();
+                    var cls = 'gantt-cell';
+                    if (dow === 0 || dow === 6) cls += ' weekend';
+                    groupRowHtml += '<div class="' + cls + '" style="width:' + DAY_WIDTH + 'px;"></div>';
+                }
+                groupRowHtml += '<span class="group-label">' + escHtml(group.name) + ' <span class="group-count">' + group.tasks.length + '</span></span>';
+                groupRowHtml += '</div>';
+                bodyHtml += groupRowHtml;
+            }
+
+            // Task rows
+            for (var i = 0; i < group.tasks.length; i++) {
+                var t = group.tasks[i];
+                var rowHtml = '<div class="gantt-row" data-task-id="' + t.id + '">';
+
+                // Cell backgrounds
+                for (var j = 0; j < dates.length; j++) {
+                    var d = dates[j];
+                    var dow = d.getDay();
+                    var cls = 'gantt-cell';
+                    if (dow === 0 || dow === 6) cls += ' weekend';
+                    if (d.getTime() === today.getTime()) cls += ' today';
+                    rowHtml += '<div class="' + cls + '" style="width:' + DAY_WIDTH + 'px;"></div>';
+                }
+
+                // Bar
+                if (t.startDate) {
+                    var barStart = parseLocalDate(t.startDate);
+                    var barEnd = t.dueDate ? parseLocalDate(t.dueDate) : barStart;
+                    var offsetDays = daysBetween(ganttStart, barStart);
+                    var duration = daysBetween(barStart, barEnd) + 1;
+                    if (duration < 1) duration = 1;
+
+                    var left = offsetDays * DAY_WIDTH;
+                    var width = duration * DAY_WIDTH - 2;
+                    var barCls = 'bar-' + (t.status || '');
+
+                    rowHtml += '<div class="gantt-bar ' + barCls + '" '
+                        + 'style="left:' + left + 'px;width:' + width + 'px;" '
+                        + 'data-task-id="' + t.id + '" '
+                        + 'data-start="' + t.startDate + '" '
+                        + 'data-end="' + (t.dueDate || t.startDate) + '" '
+                        + 'data-duration="' + duration + '" '
+                        + 'onclick="barClick(\'' + t.id + '\', event)" '
+                        + 'onmousedown="barMouseDown(event, this)" '
+                        + 'title="' + escHtml(t.name + ' ' + t.subject) + '">'
+                        + '<span class="bar-label">' + escHtml(t.name + '  ' + (t.subject || '')) + '</span>'
+                        + '</div>';
+                }
+
+                rowHtml += '</div>';
+                bodyHtml += rowHtml;
+            }
+        }
+
+        timeline.innerHTML =
+            '<div class="gantt-timeline-header">'
+            + '<div class="gantt-month-row">' + monthHtml + '</div>'
+            + '<div class="gantt-day-row">' + dayHtml + '</div>'
+            + '</div>'
+            + '<div class="gantt-body">' + bodyHtml + '</div>';
+
+        // Sync scroll between left and right
+        syncScroll();
+
+        // Scroll to show today
+        scrollToToday();
+    }
+
+    function syncScroll() {
+        var right = document.getElementById('ganttRight');
+        var leftBody = document.getElementById('ganttLeftBody');
+        if (!right || !leftBody) return;
+        right.addEventListener('scroll', function() {
+            leftBody.scrollTop = right.scrollTop;
+        });
+        leftBody.addEventListener('scroll', function() {
+            right.scrollTop = leftBody.scrollTop;
+        });
+    }
+
+    function scrollToToday() {
+        var right = document.getElementById('ganttRight');
+        if (!right) return;
+        var offset = daysBetween(ganttStart, today);
+        if (offset > 5) {
+            right.scrollLeft = (offset - 3) * DAY_WIDTH;
+        }
+    }
+
+    function escHtml(s) {
+        if (!s) return '';
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(s));
+        return d.innerHTML;
+    }
+
+    // ===== DRAG & DROP BARS =====
+    var dragBar = null;
+    var dragOffsetX = 0;
+    var dragOrigLeft = 0;
+    var wasDragging = false;
+
+    function barMouseDown(e, bar) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        dragBar = bar;
+        dragOrigLeft = parseInt(bar.style.left);
+        dragOffsetX = e.clientX - bar.getBoundingClientRect().left;
+        wasDragging = false;
+        bar.classList.add('dragging');
+        document.addEventListener('mousemove', barMouseMove);
+        document.addEventListener('mouseup', barMouseUp);
+    }
+
+    function barMouseMove(e) {
+        if (!dragBar) return;
+        wasDragging = true;
+        var right = document.getElementById('ganttRight');
+        var timeline = document.getElementById('ganttTimeline');
+        var rect = timeline.getBoundingClientRect();
+        var newLeft = e.clientX - rect.left + right.scrollLeft - dragOffsetX;
+        // Snap to grid
+        newLeft = Math.round(newLeft / DAY_WIDTH) * DAY_WIDTH;
+        if (newLeft < 0) newLeft = 0;
+        dragBar.style.left = newLeft + 'px';
+    }
+
+    function barMouseUp(e) {
+        if (!dragBar) return;
+        dragBar.classList.remove('dragging');
+        document.removeEventListener('mousemove', barMouseMove);
+        document.removeEventListener('mouseup', barMouseUp);
+
+        var newLeft = parseInt(dragBar.style.left);
+        var dayOffset = Math.round(newLeft / DAY_WIDTH);
+        var duration = parseInt(dragBar.getAttribute('data-duration')) || 1;
+        var taskId = dragBar.getAttribute('data-task-id');
+
+        var newStart = addDays(ganttStart, dayOffset);
+        var newEnd = addDays(newStart, duration - 1);
+
+        var startStr = formatLocalDate(newStart);
+        var endStr = formatLocalDate(newEnd);
+
+        // Update local tasksJson immediately so bar stays in position
+        for (var i = 0; i < tasksJson.length; i++) {
+            if (tasksJson[i].id === taskId) {
+                tasksJson[i].startDate = startStr;
+                tasksJson[i].dueDate = endStr;
+                break;
+            }
+        }
+
+        dragBar = null;
+
+        // Only update if actually dragged
+        if (wasDragging) {
+            updateTaskDatesAF(taskId, startStr, endStr);
+        }
+    }
+
+    function barClick(taskId, e) {
+        e.stopPropagation();
+        // Don't open popup if was dragging
+        if (wasDragging) {
+            wasDragging = false;
+            return;
+        }
+        openTaskPopupAF(taskId);
+    }
+
+    // ===== TOGGLE LEFT =====
+    function toggleLeftPanel() {
+        var left = document.getElementById('ganttLeft');
+        var btn = document.getElementById('toggleBtn');
+        if (left.classList.contains('collapsed')) {
+            left.classList.remove('collapsed');
+            left.style.width = '450px';
+            btn.innerHTML = '&#x2190; 隠す';
+        } else {
+            left.classList.add('collapsed');
+            left.style.width = '0px';
+            btn.innerHTML = '&#x2192; 表示';
+        }
+    }
+
+    function closePopupOverlay(e) {
+        if (e.target.classList.contains('popup-overlay')) {
+            // Use Apex to close
+            var closeBtn = document.querySelector('.popup-overlay .popup-icon-btn[value="✕"]');
+            if (closeBtn) closeBtn.click();
+        }
+    }
+
+    // ===== INIT =====
+    function refreshGanttData() {
+        var hdnTasks = document.getElementById('hdnTasks');
+        var hdnStartStr = document.getElementById('hdnStartStr');
+        var hdnScale = document.getElementById('hdnScale');
+        var hdnShowLeft = document.getElementById('hdnShowLeft');
+        var hdnGrouping = document.getElementById('hdnGrouping');
+
+        if (hdnTasks && hdnTasks.value) {
+            try {
+                tasksJson = JSON.parse(hdnTasks.value);
+            } catch(e) {
+                console.error('Failed to parse tasks:', e);
+            }
+        }
+
+        if (hdnStartStr && hdnStartStr.value) {
+            ganttStartStr = hdnStartStr.value;
+            ganttStart = parseLocalDate(ganttStartStr);
+        }
+
+        if (hdnScale && hdnScale.value) {
+            ganttScale = hdnScale.value;
+            DAY_WIDTH = ganttScale === '日' ? 30 : (ganttScale === '週' ? 12 : 4);
+            TOTAL_DAYS = ganttScale === '日' ? 60 : (ganttScale === '週' ? 120 : 365);
+        }
+
+        if (hdnShowLeft) {
+            showLeftPanel = hdnShowLeft.value === 'true';
+        }
+
+        if (hdnGrouping && hdnGrouping.value) {
+            ganttGrouping = hdnGrouping.value;
+        }
+
+        ganttEnd = addDays(ganttStart, TOTAL_DAYS);
+        renderGantt();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderGantt);
+    } else {
+        renderGantt();
+    }
+  </script>
+</apex:page>

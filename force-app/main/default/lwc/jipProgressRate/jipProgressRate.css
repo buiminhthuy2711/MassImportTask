@@ -1,0 +1,57 @@
+.kpi-container {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    justify-content: center;
+}
+.progress-circle-wrapper {
+    flex-shrink: 0;
+}
+.progress-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.progress-circle::after {
+    content: "";
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+}
+.progress-text {
+    position: relative;
+    z-index: 1;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #333;
+}
+.kpi-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.kpi-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
+.kpi-label {
+    color: #666;
+}
+.kpi-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+.kpi-completed {
+    color: #2baf6a;
+}
+.kpi-remaining {
+    color: #e8833a;
+}

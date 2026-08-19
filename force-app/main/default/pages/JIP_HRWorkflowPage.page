@@ -1,0 +1,578 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRWorkflowController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --purple: #805ad5;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Content */
+    .workflow-content {
+      padding: 1.5rem;
+    }
+
+    /* Tab Nav */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--white);
+      padding: 0.5rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .tab-btn {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-light);
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    .tab-btn:hover:not(.active) {
+      background: #f7fafc;
+    }
+
+    /* Stats Cards */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--white);
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .stat-icon {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* Request List */
+    .request-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .request-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .request-header h2 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .request-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .request-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #f0f0f0;
+      gap: 1rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .request-item:hover {
+      background: #f8fafc;
+    }
+    .request-item:last-child {
+      border-bottom: none;
+    }
+
+    .request-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+    }
+    .request-info {
+      flex: 1;
+    }
+    .request-title {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .request-meta {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      display: flex;
+      gap: 1rem;
+    }
+    .request-type {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .type-leave {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .type-expense {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .type-ot {
+      background: #feebc8;
+      color: #744210;
+    }
+    .type-remote {
+      background: #e9d8fd;
+      color: #553c9a;
+    }
+
+    .request-status {
+      padding: 0.2rem 0.8rem;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    .status-pending {
+      background: #feebc8;
+      color: #744210;
+    }
+    .status-approved {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status-rejected {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .status-processing {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+
+    .request-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-approve {
+      background: var(--success);
+      color: white;
+    }
+    .btn-reject {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* Workflow Timeline */
+    .workflow-card {
+      background: var(--white);
+      border-radius: 10px;
+      margin-top: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .workflow-timeline {
+      padding: 1.5rem;
+    }
+    .timeline-step {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+    .timeline-step:last-child {
+      padding-bottom: 0;
+    }
+    .timeline-step::before {
+      content: "";
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-step:last-child::before {
+      display: none;
+    }
+    .timeline-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .step-done .timeline-icon {
+      background: var(--success);
+      color: white;
+    }
+    .step-current .timeline-icon {
+      background: var(--primary);
+      color: white;
+    }
+    .step-pending .timeline-icon {
+      background: #edf2f7;
+      color: var(--text-light);
+    }
+    .timeline-content {
+      flex: 1;
+    }
+    .timeline-title {
+      font-weight: 600;
+    }
+    .timeline-meta {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="workflow" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['workflow_request_mgmt']}
+            </div>
+            <h1>&#128203; {!T['workflow_request_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <button type="button" class="btn btn-outline">
+              &#128196; {!T['request_history']}
+            </button>
+            <apex:commandButton value="+ {!T['new_request']}"
+              action="{!openNewRequest}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+            />
+          </div>
+        </div>
+
+        <div class="workflow-content">
+          <!-- Tab Navigation -->
+          <div class="tab-nav">
+            <button type="button" class="tab-btn active">承認待ち</button>
+            <button type="button" class="tab-btn">自分の申請</button>
+            <button type="button" class="tab-btn">休暇申請</button>
+            <button type="button" class="tab-btn">経費申請</button>
+            <button type="button" class="tab-btn">残業申請</button>
+            <button type="button" class="tab-btn">在宅勤務</button>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #fed7d7">&#128308;</div>
+              <div>
+                <div class="stat-value" style="color: #e53e3e">8</div>
+                <div class="stat-label">要対応</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #feebc8">&#128992;</div>
+              <div>
+                <div class="stat-value" style="color: #d69e2e">5</div>
+                <div class="stat-label">進行中</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #c6f6d5">&#9989;</div>
+              <div>
+                <div class="stat-value" style="color: #38a169">42</div>
+                <div class="stat-label">今月完了</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #e9d8fd">&#128203;</div>
+              <div>
+                <div class="stat-value" style="color: #805ad5">3</div>
+                <div class="stat-label">自分の申請</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #bee3f8">&#128337;</div>
+              <div>
+                <div class="stat-value" style="color: #4299e1">2.3h</div>
+                <div class="stat-label">平均処理時間</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Request List -->
+          <div class="request-card">
+            <div class="request-header">
+              <h2>&#128229; 承認待ち一覧</h2>
+              <div style="display: flex; gap: 0.5rem">
+                <button type="button" class="btn btn-outline">
+                  &#9989; 一括承認
+                </button>
+                <button type="button" class="btn btn-outline">
+                  &#128466; フィルター
+                </button>
+              </div>
+            </div>
+            <ul class="request-list">
+              <li class="request-item">
+                <div class="request-avatar">山</div>
+                <div class="request-info">
+                  <div class="request-title">
+                    山田 太郎
+                    <span class="request-type type-leave">有給休暇</span>
+                  </div>
+                  <div class="request-meta">
+                    <span>2026/03/15 - 2026/03/17（3日間）</span>
+                    <span>申請日: 2026/03/02</span>
+                  </div>
+                </div>
+                <span class="request-status status-pending">承認待ち</span>
+                <div class="request-actions">
+                  <button type="button" class="btn btn-approve">承認</button>
+                  <button type="button" class="btn btn-reject">却下</button>
+                </div>
+              </li>
+              <li class="request-item">
+                <div
+                  class="request-avatar"
+                  style="background: linear-gradient(135deg, #f093fb, #f5576c)"
+                >
+                  佐
+                </div>
+                <div class="request-info">
+                  <div class="request-title">
+                    佐藤 花子
+                    <span class="request-type type-expense">経費申請</span>
+                  </div>
+                  <div class="request-meta">
+                    <span>交通費 ¥15,280</span>
+                    <span>申請日: 2026/03/01</span>
+                  </div>
+                </div>
+                <span class="request-status status-processing">審査中</span>
+                <div class="request-actions">
+                  <button type="button" class="btn btn-approve">承認</button>
+                  <button type="button" class="btn btn-reject">却下</button>
+                </div>
+              </li>
+              <li class="request-item">
+                <div
+                  class="request-avatar"
+                  style="background: linear-gradient(135deg, #4facfe, #00f2fe)"
+                >
+                  鈴
+                </div>
+                <div class="request-info">
+                  <div class="request-title">
+                    鈴木 一郎
+                    <span class="request-type type-ot">残業申請</span>
+                  </div>
+                  <div class="request-meta">
+                    <span>3月分 残業 12時間</span>
+                    <span>申請日: 2026/03/02</span>
+                  </div>
+                </div>
+                <span class="request-status status-pending">承認待ち</span>
+                <div class="request-actions">
+                  <button type="button" class="btn btn-approve">承認</button>
+                  <button type="button" class="btn btn-reject">却下</button>
+                </div>
+              </li>
+              <li class="request-item">
+                <div
+                  class="request-avatar"
+                  style="background: linear-gradient(135deg, #11998e, #38ef7d)"
+                >
+                  田
+                </div>
+                <div class="request-info">
+                  <div class="request-title">
+                    田中 美咲
+                    <span class="request-type type-remote">在宅勤務</span>
+                  </div>
+                  <div class="request-meta">
+                    <span>2026/03/10 - 2026/03/14（5日間）</span>
+                    <span>申請日: 2026/03/01</span>
+                  </div>
+                </div>
+                <span class="request-status status-pending">承認待ち</span>
+                <div class="request-actions">
+                  <button type="button" class="btn btn-approve">承認</button>
+                  <button type="button" class="btn btn-reject">却下</button>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Workflow Timeline -->
+          <div class="workflow-card">
+            <div class="request-header">
+              <h2>&#128464; 承認フロー詳細</h2>
+            </div>
+            <div class="workflow-timeline">
+              <div class="timeline-step step-done">
+                <div class="timeline-icon">&#10003;</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">申請者: 山田 太郎</div>
+                  <div class="timeline-meta">
+                    2026/03/02 09:15 · 有給休暇申請を提出
+                  </div>
+                </div>
+              </div>
+              <div class="timeline-step step-done">
+                <div class="timeline-icon">&#10003;</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">
+                    第1承認者: チームリーダー 佐藤
+                  </div>
+                  <div class="timeline-meta">2026/03/02 10:30 · 承認済み</div>
+                </div>
+              </div>
+              <div class="timeline-step step-current">
+                <div class="timeline-icon">&#8594;</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">第2承認者: 部長 鈴木</div>
+                  <div class="timeline-meta">承認待ち · 3日経過</div>
+                </div>
+              </div>
+              <div class="timeline-step step-pending">
+                <div class="timeline-icon">&#9675;</div>
+                <div class="timeline-content">
+                  <div class="timeline-title">人事部 最終確認</div>
+                  <div class="timeline-meta">未着手</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

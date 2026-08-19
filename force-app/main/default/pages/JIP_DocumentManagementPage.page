@@ -1,0 +1,1073 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_DocumentManagementController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --green: #2baf6a;
+      --green-dark: #239b5b;
+      --green-darker: #1a7a47;
+      --green-light: #e6f7ee;
+      --orange: #e8833a;
+      --red: #d9534f;
+      --blue: #5b9bd5;
+      --gray: #888;
+      --bg: #f5f5f5;
+      --white: #ffffff;
+      --text: #333;
+      --text-light: #666;
+      --border: #e0e0e0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .doc-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .doc-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .doc-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .project-select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .doc-title-row {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    /* ===== DOC BODY: left tree + main content + right TOC ===== */
+    .doc-body {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Document tree panel */
+    .doc-tree-panel {
+      width: 280px;
+      min-width: 220px;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .doc-tree-search {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .doc-tree-search input {
+      width: 100%;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .doc-tree-search input:focus {
+      border-color: var(--green);
+    }
+    .doc-tree-header {
+      padding: 0.5rem 0.8rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text);
+    }
+    .doc-tree-header .doc-count {
+      background: var(--green);
+      color: #fff;
+      border-radius: 10px;
+      padding: 0 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.4rem;
+    }
+    .doc-tree-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.3rem 0;
+    }
+
+    /* Tree nodes */
+    .tree-node {
+    }
+    .tree-item {
+      display: flex;
+      align-items: center;
+      padding: 0.35rem 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      gap: 0.3rem;
+      font-size: 0.84rem;
+      color: var(--text);
+      border-left: 3px solid transparent;
+    }
+    .tree-item:hover {
+      background: #f0f8f4;
+    }
+    .tree-item.selected {
+      background: var(--green-light);
+      border-left-color: var(--green);
+      font-weight: 600;
+    }
+    .tree-item .tree-icon {
+      color: var(--green);
+      font-size: 0.9rem;
+      min-width: 18px;
+      text-align: center;
+    }
+    .tree-item .tree-title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tree-item .tree-add-btn {
+      visibility: hidden;
+      background: none;
+      border: none;
+      color: var(--green);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 0.2rem;
+      line-height: 1;
+    }
+    .tree-item:hover .tree-add-btn {
+      visibility: visible;
+    }
+    .tree-children {
+      padding-left: 1rem;
+    }
+    .tree-toggle {
+      cursor: pointer;
+      font-size: 0.7rem;
+      min-width: 14px;
+      color: var(--gray);
+      user-select: none;
+    }
+
+    /* Add / Trash buttons */
+    .doc-tree-footer {
+      border-top: 1px solid var(--border);
+      padding: 0.5rem 0.8rem;
+    }
+    .doc-add-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--green);
+      font-size: 0.84rem;
+      cursor: pointer;
+      padding: 0.3rem 0;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: color 0.15s;
+    }
+    .doc-add-btn:hover {
+      color: var(--green-dark);
+    }
+    .doc-trash-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--gray);
+      font-size: 0.84rem;
+      cursor: pointer;
+      padding: 0.3rem 0;
+      margin-top: 0.3rem;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: color 0.15s;
+    }
+    .doc-trash-btn:hover {
+      color: var(--red);
+    }
+
+    /* ===== MAIN DOCUMENT CONTENT ===== */
+    .doc-main {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .doc-breadcrumb {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      border-bottom: 1px solid var(--border);
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .doc-breadcrumb a {
+      color: var(--green);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .doc-breadcrumb a:hover {
+      text-decoration: underline;
+    }
+    .doc-breadcrumb .sep {
+      color: var(--border);
+      margin: 0 0.2rem;
+    }
+
+    .doc-content-header {
+      padding: 1rem 2rem 0.5rem 2rem;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .doc-content-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+    }
+    .doc-content-title-input {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+      width: 60%;
+    }
+    .doc-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .btn-edit {
+      padding: 0.4rem 1rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn-edit:hover {
+      background: var(--green-dark);
+    }
+    .btn-save {
+      padding: 0.4rem 1rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .btn-save:hover {
+      background: var(--green-dark);
+    }
+    .btn-cancel {
+      padding: 0.4rem 1rem;
+      background: var(--white);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-cancel:hover {
+      background: #f5f5f5;
+    }
+    .btn-delete {
+      padding: 0.4rem 0.8rem;
+      background: var(--white);
+      color: var(--red);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-delete:hover {
+      background: #fff0f0;
+    }
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.35rem 0.5rem;
+      cursor: pointer;
+      color: var(--text-light);
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    .btn-icon:hover {
+      background: #f5f5f5;
+    }
+
+    .doc-content-body {
+      flex: 1;
+      padding: 1rem 2rem 2rem 2rem;
+      background: var(--white);
+    }
+    .doc-content-body .rich-view {
+      line-height: 1.7;
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+    .doc-content-body .rich-view h1 {
+      font-size: 1.5rem;
+      margin: 1.2rem 0 0.6rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.3rem;
+    }
+    .doc-content-body .rich-view h2 {
+      font-size: 1.25rem;
+      margin: 1rem 0 0.5rem;
+    }
+    .doc-content-body .rich-view h3 {
+      font-size: 1.1rem;
+      margin: 0.8rem 0 0.4rem;
+    }
+    .doc-content-body .rich-view p {
+      margin: 0.5rem 0;
+    }
+    .doc-content-body .rich-view ul,
+    .doc-content-body .rich-view ol {
+      padding-left: 1.5rem;
+    }
+    .doc-content-body .rich-view img {
+      max-width: 100%;
+    }
+    .doc-content-body .rich-view table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.5rem 0;
+    }
+    .doc-content-body .rich-view table th,
+    .doc-content-body .rich-view table td {
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      font-size: 0.85rem;
+    }
+    .doc-content-body .rich-view table th {
+      background: #f5f5f5;
+      font-weight: 600;
+    }
+
+    .doc-edit-area {
+      width: 100%;
+    }
+    .doc-edit-area textarea {
+      width: 100%;
+      min-height: 400px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    /* Meta info */
+    .doc-meta {
+      padding: 0.8rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--white);
+      font-size: 0.78rem;
+      color: var(--text-light);
+      display: flex;
+      gap: 2rem;
+    }
+
+    /* ===== RIGHT TOC PANEL ===== */
+    .doc-toc-panel {
+      width: 200px;
+      min-width: 160px;
+      background: var(--white);
+      border-left: 1px solid var(--border);
+      padding: 0.8rem;
+      overflow-y: auto;
+    }
+    .doc-toc-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .doc-toc-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .doc-toc-list li {
+      padding: 0.2rem 0;
+    }
+    .doc-toc-list li a {
+      color: var(--text-light);
+      text-decoration: none;
+      font-size: 0.8rem;
+      display: block;
+      padding: 0.15rem 0;
+      transition: color 0.15s;
+    }
+    .doc-toc-list li a:hover {
+      color: var(--green);
+    }
+    .doc-toc-list li.toc-h1 {
+      padding-left: 0;
+    }
+    .doc-toc-list li.toc-h2 {
+      padding-left: 0.8rem;
+    }
+    .doc-toc-list li.toc-h3 {
+      padding-left: 1.6rem;
+    }
+
+    /* Empty state */
+    .doc-empty {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      font-size: 1rem;
+    }
+
+    /* Trash view */
+    .trash-view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 2rem;
+      background: var(--white);
+    }
+    .trash-header {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .trash-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .trash-table th,
+    .trash-table td {
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    .trash-table th {
+      background: #f9f9f9;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+    .trash-table tr:hover {
+      background: #f8f8f8;
+    }
+    .trash-actions {
+      display: flex;
+      gap: 0.4rem;
+    }
+    .btn-restore {
+      padding: 0.25rem 0.6rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .btn-restore:hover {
+      background: var(--green-dark);
+    }
+    .btn-perm-delete {
+      padding: 0.25rem 0.6rem;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .btn-perm-delete:hover {
+      background: #c9302c;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .doc-tree-panel {
+        width: 200px;
+        min-width: 160px;
+      }
+      .doc-toc-panel {
+        display: none;
+      }
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <!-- Action Functions -->
+    <apex:actionFunction name="selectDocAF"
+      action="{!selectDocument}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    >
+      <apex:param name="docId" value="" assignTo="{!selectedDocumentId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="createChildAF"
+      action="{!createChildDocument}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    >
+      <apex:param name="parentId" value="" assignTo="{!newDocParentId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="restoreDocAF"
+      action="{!restoreFromTrash}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    >
+      <apex:param name="restoreId" value="" assignTo="{!selectedDocumentId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="deleteDocAF"
+      action="{!deleteFromTrash}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    >
+      <apex:param name="deleteId" value="" assignTo="{!selectedDocumentId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="openTrashAF"
+      action="{!openTrash}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    />
+    <apex:actionFunction name="createRootDocAF"
+      action="{!createDocument}"
+      reRender="mainForm"
+      oncomplete="initDocPage();"
+    />
+
+    <div class="doc-wrap">
+      <!-- LEFT SIDEBAR (Navigation) -->
+      <c:JIP_ProjectSidebar projectId="{!selectedProjectId}"
+        projectName="{!selectedProjectName}"
+        activePage="document"
+      />
+
+      <!-- MAIN CONTENT -->
+      <div class="main-content">
+        <!-- Header -->
+        <div class="doc-header">
+          <h1>
+            <apex:selectList value="{!selectedProjectId}"
+              size="1"
+              multiselect="false"
+              styleClass="project-select"
+            >
+              <apex:selectOptions value="{!projectOptions}" />
+              <apex:actionSupport event="onchange"
+                action="{!selectProject}"
+                reRender="mainForm"
+              />
+            </apex:selectList>
+          </h1>
+        </div>
+
+        <!-- Title -->
+        <div class="doc-title-row">&#x1F4C4; {!T['document']}</div>
+
+        <!-- Doc body: tree + content + toc -->
+        <div class="doc-body">
+          <!-- Document Tree Panel -->
+          <div class="doc-tree-panel">
+            <!-- Search -->
+            <div class="doc-tree-search">
+              <apex:inputText value="{!searchKeyword}"
+                html-placeholder="{!T['search_document']}"
+                styleClass="doc-search-input"
+              >
+                <apex:actionSupport event="onkeyup"
+                  action="{!searchDocuments}"
+                  reRender="mainForm"
+                />
+              </apex:inputText>
+            </div>
+            <!-- Tree header -->
+            <div class="doc-tree-header">
+              <span
+                >{!T['document']}
+                <span class="doc-count">{!documentList.size}</span></span
+              >
+            </div>
+            <!-- Tree content (rendered by JS) -->
+            <div class="doc-tree-content" id="docTreeContainer"></div>
+            <!-- Footer -->
+            <div class="doc-tree-footer">
+              <button
+                type="button"
+                class="doc-add-btn"
+                onclick="
+                  addRootDocument();
+                  return false;
+                "
+              >
+                &#x2795; {!T['add_document']}
+              </button>
+              <button
+                type="button"
+                class="doc-trash-btn"
+                onclick="
+                  openTrashView();
+                  return false;
+                "
+              >
+                &#x1F5D1; {!T['trash']}
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Content Area -->
+          <apex:outputPanel layout="none" rendered="{!!showTrash}">
+            <apex:outputPanel layout="none"
+              rendered="{!selectedDocument != null}"
+            >
+              <div class="doc-main">
+                <!-- Breadcrumb -->
+                <div class="doc-breadcrumb" id="docBreadcrumb"></div>
+
+                <!-- View mode -->
+                <apex:outputPanel layout="none" rendered="{!!isEditMode}">
+                  <div class="doc-content-header">
+                    <h2 class="doc-content-title">
+                      {!selectedDocument.Title__c}
+                    </h2>
+                    <div class="doc-actions">
+                      <apex:commandButton value="{!T['edit']}"
+                        action="{!enterEditMode}"
+                        styleClass="btn-edit"
+                      />
+                      <apex:commandButton value="&#x1F5D1;"
+                        action="{!moveToTrash}"
+                        reRender="mainForm"
+                        styleClass="btn-icon"
+                        onclick="if(!confirm('{!T['confirm_move_to_trash']}')) return false;"
+                      />
+                    </div>
+                  </div>
+                  <div class="doc-content-body">
+                    <div class="rich-view" id="richContent">
+                      <apex:outputField value="{!selectedDocument.Content__c}"
+                      />
+                    </div>
+                  </div>
+                  <div class="doc-meta">
+                    <span
+                      >{!T['created_date']}:
+                      <apex:outputText value="{0,date,yyyy/MM/dd HH:mm}"
+                        ><apex:param value="{!selectedDocument.CreatedDate}" /></apex:outputText></span>
+                    <span
+                      >{!T['updated_date']}:
+                      <apex:outputText value="{0,date,yyyy/MM/dd HH:mm}"
+                        ><apex:param value="{!selectedDocument.LastModifiedDate}" /></apex:outputText></span>
+                  </div>
+                </apex:outputPanel>
+
+                <!-- Edit mode -->
+                <apex:outputPanel layout="none" rendered="{!isEditMode}">
+                  <div class="doc-content-header">
+                    <apex:inputField value="{!selectedDocument.Title__c}"
+                      styleClass="doc-content-title-input"
+                    />
+                    <div class="doc-actions">
+                      <apex:commandButton value="{!T['save']}"
+                        action="{!saveDocument}"
+                        styleClass="btn-save"
+                      />
+                      <apex:commandButton value="{!T['cancel']}"
+                        action="{!cancelEdit}"
+                        styleClass="btn-cancel"
+                      />
+                    </div>
+                  </div>
+                  <div class="doc-content-body">
+                    <div class="doc-edit-area">
+                      <apex:inputField value="{!selectedDocument.Content__c}"
+                        style="width: 100%; min-height: 400px"
+                      />
+                    </div>
+                  </div>
+                </apex:outputPanel>
+              </div>
+
+              <!-- TOC Panel (view mode only) -->
+              <apex:outputPanel layout="none" rendered="{!!isEditMode}">
+                <div class="doc-toc-panel">
+                  <div class="doc-toc-title">{!T['table_of_contents']}</div>
+                  <ul class="doc-toc-list" id="docTocList"></ul>
+                </div>
+              </apex:outputPanel>
+            </apex:outputPanel>
+
+            <!-- Empty state -->
+            <apex:outputPanel layout="none"
+              rendered="{!selectedDocument == null}"
+            >
+              <div class="doc-empty">
+                <div style="text-align: center">
+                  <div style="font-size: 2.5rem; margin-bottom: 0.5rem">
+                    &#x1F4C4;
+                  </div>
+                  <div>{!T['no_document']}</div>
+                  <div style="margin-top: 0.5rem">
+                    <button
+                      type="button"
+                      class="btn-edit"
+                      onclick="
+                        addRootDocument();
+                        return false;
+                      "
+                      style="font-size: 0.9rem"
+                    >
+                      &#x2795; {!T['create_first_document']}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </apex:outputPanel>
+          </apex:outputPanel>
+
+          <!-- Trash view -->
+          <apex:outputPanel layout="none" rendered="{!showTrash}">
+            <div class="trash-view">
+              <div class="trash-header">
+                &#x1F5D1; {!T['trash']}
+                <apex:commandButton value="{!T['back']}"
+                  action="{!closeTrash}"
+                  reRender="mainForm"
+                  styleClass="btn-cancel"
+                  style="margin-left: 1rem; font-size: 0.82rem"
+                />
+              </div>
+              <apex:outputPanel rendered="{!trashList.size > 0}">
+                <table class="trash-table">
+                  <thead>
+                    <tr>
+                      <th>{!T['document_name']}</th>
+                      <th>{!T['deleted_date']}</th>
+                      <th>{!T['actions']}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <apex:repeat value="{!trashList}" var="td">
+                      <tr>
+                        <td>{!td.Title__c}</td>
+                        <td>
+                          <apex:outputText value="{0,date,yyyy/MM/dd HH:mm}">
+                            <apex:param value="{!td.LastModifiedDate}" />
+                          </apex:outputText>
+                        </td>
+                        <td>
+                          <div class="trash-actions">
+                            <button
+                              type="button"
+                              class="btn-restore"
+                              onclick="
+                                restoreDocAF('{!td.Id}');
+                                return false;
+                              "
+                            >
+                              {!T['restore']}
+                            </button>
+                            <button
+                              type="button"
+                              class="btn-perm-delete"
+                              onclick="if(confirm('{!T['confirm_delete']}')) deleteDocAF('{!td.Id}'); return false;"
+                            >
+                              {!T['delete_permanently']}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </apex:repeat>
+                  </tbody>
+                </table>
+              </apex:outputPanel>
+              <apex:outputPanel rendered="{!trashList.size == 0}">
+                <div
+                  style="
+                    color: var(--text-light);
+                    padding: 2rem;
+                    text-align: center;
+                  "
+                >
+                  ゴミ箱は空です
+                </div>
+              </apex:outputPanel>
+            </div>
+          </apex:outputPanel>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden fields for create actions -->
+    <apex:inputHidden value="{!newDocParentId}" id="hiddenParentId" />
+    <apex:inputHidden value="{!newDocTitle}" id="hiddenNewTitle" />
+
+    <apex:pageMessages id="pgMessages" />
+
+    <!-- Data variables inside form so they refresh on reRender -->
+    <script>
+      var treeData = {!documentTreeJson};
+      var selectedDocId = '{!JSENCODE(selectedDocIdStr)}';
+      var breadcrumbData = {!breadcrumbJson};
+    </script>
+  </apex:form>
+
+  <script>
+    // Render document tree
+    function renderTree() {
+      var container = document.getElementById("docTreeContainer");
+      if (!container) return;
+      container.innerHTML = "";
+      if (!treeData || treeData.length === 0) {
+        container.innerHTML =
+          '<div style="padding:1rem 0.8rem;color:#888;font-size:0.82rem;">ドキュメントがありません</div>';
+        return;
+      }
+      var ul = document.createElement("div");
+      for (var i = 0; i < treeData.length; i++) {
+        ul.appendChild(createTreeNode(treeData[i], 0));
+      }
+      container.appendChild(ul);
+    }
+
+    function createTreeNode(node, depth) {
+      var div = document.createElement("div");
+      div.className = "tree-node";
+
+      var item = document.createElement("div");
+      item.className =
+        "tree-item" + (node.id === selectedDocId ? " selected" : "");
+      item.style.paddingLeft = 0.8 + depth * 1 + "rem";
+
+      var hasChildren = node.children && node.children.length > 0;
+
+      // Toggle arrow
+      var toggle = document.createElement("span");
+      toggle.className = "tree-toggle";
+      toggle.innerHTML = hasChildren ? "&#x25BC;" : "&nbsp;";
+      toggle.style.minWidth = "14px";
+      if (hasChildren) {
+        toggle.onclick = function (e) {
+          e.stopPropagation();
+          var childDiv = div.querySelector(".tree-children");
+          if (childDiv) {
+            var isHidden = childDiv.style.display === "none";
+            childDiv.style.display = isHidden ? "block" : "none";
+            toggle.innerHTML = isHidden ? "&#x25BC;" : "&#x25B6;";
+          }
+        };
+      }
+      item.appendChild(toggle);
+
+      // Icon
+      var icon = document.createElement("span");
+      icon.className = "tree-icon";
+      icon.innerHTML = "&#x1F4C4;";
+      item.appendChild(icon);
+
+      // Title
+      var title = document.createElement("span");
+      title.className = "tree-title";
+      title.textContent = node.title || "無題";
+      item.appendChild(title);
+
+      // Add child button
+      var addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "tree-add-btn";
+      addBtn.innerHTML = "+";
+      addBtn.title = "子ドキュメントを追加";
+      addBtn.onclick = function (e) {
+        e.stopPropagation();
+        createChildAF(node.id);
+      };
+      item.appendChild(addBtn);
+
+      // Click to select
+      (function (nid) {
+        item.onclick = function () {
+          selectDocAF(nid);
+        };
+      })(node.id);
+
+      div.appendChild(item);
+
+      // Children
+      if (hasChildren) {
+        var childDiv = document.createElement("div");
+        childDiv.className = "tree-children";
+        for (var i = 0; i < node.children.length; i++) {
+          childDiv.appendChild(createTreeNode(node.children[i], depth + 1));
+        }
+        div.appendChild(childDiv);
+      }
+
+      return div;
+    }
+
+    // Render breadcrumb
+    function renderBreadcrumb() {
+      var container = document.getElementById("docBreadcrumb");
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!breadcrumbData || breadcrumbData.length === 0) return;
+
+      for (var i = 0; i < breadcrumbData.length; i++) {
+        if (i > 0) {
+          var sep = document.createElement("span");
+          sep.className = "sep";
+          sep.textContent = "/";
+          container.appendChild(sep);
+        }
+        var a = document.createElement("a");
+        a.textContent = breadcrumbData[i].title;
+        (function (bid) {
+          a.onclick = function () {
+            selectDocAF(bid);
+          };
+        })(breadcrumbData[i].id);
+        container.appendChild(a);
+      }
+    }
+
+    // Build TOC from content headings
+    function buildTOC() {
+      var tocList = document.getElementById("docTocList");
+      var content = document.getElementById("richContent");
+      if (!tocList || !content) return;
+      tocList.innerHTML = "";
+
+      var headings = content.querySelectorAll("h1, h2, h3");
+      if (headings.length === 0) {
+        tocList.innerHTML =
+          '<li style="color:#888;font-size:0.78rem;">見出しがありません</li>';
+        return;
+      }
+
+      for (var i = 0; i < headings.length; i++) {
+        var h = headings[i];
+        var id = "toc-heading-" + i;
+        h.id = id;
+
+        var li = document.createElement("li");
+        li.className = "toc-" + h.tagName.toLowerCase();
+        var a = document.createElement("a");
+        a.textContent = h.textContent;
+        a.href = "#" + id;
+        a.onclick = function (evt) {
+          evt.preventDefault();
+          var target = document.getElementById(
+            this.getAttribute("href").substring(1)
+          );
+          if (target)
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+        li.appendChild(a);
+        tocList.appendChild(li);
+      }
+    }
+
+    // Add root document
+    function addRootDocument() {
+      createRootDocAF();
+    }
+
+    // Open trash
+    function openTrashView() {
+      openTrashAF();
+    }
+
+    // Initialize on page load and after rerender
+    function initDocPage() {
+      renderTree();
+      renderBreadcrumb();
+      buildTOC();
+    }
+
+    // Run on load
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initDocPage);
+    } else {
+      initDocPage();
+    }
+  </script>
+</apex:page>

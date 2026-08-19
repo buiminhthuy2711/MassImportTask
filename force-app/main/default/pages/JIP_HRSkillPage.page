@@ -1,0 +1,551 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRSkillController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --purple: #805ad5;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Content */
+    .skill-content {
+      padding: 1.5rem;
+    }
+    .skill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+    }
+    .skill-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .skill-card-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .skill-card-header h2 {
+      font-size: 1rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .skill-card-body {
+      padding: 1.2rem;
+    }
+
+    /* Skill Tags */
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .skill-tag {
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .skill-tag.level-5 {
+      background: linear-gradient(135deg, #f6e05e, #ecc94b);
+      color: #744210;
+    }
+    .skill-tag.level-4 {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .skill-tag.level-3 {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .skill-tag.level-2 {
+      background: #e9d8fd;
+      color: #553c9a;
+    }
+    .skill-tag.level-1 {
+      background: #edf2f7;
+      color: #4a5568;
+    }
+
+    /* Certification List */
+    .cert-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .cert-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.8rem;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+    .cert-item:hover {
+      background: #f8fafc;
+    }
+    .cert-item:last-child {
+      border-bottom: none;
+    }
+    .cert-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .cert-info {
+      flex: 1;
+    }
+    .cert-name {
+      font-weight: 600;
+    }
+    .cert-date {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .cert-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .cert-valid {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .cert-expiring {
+      background: #feebc8;
+      color: #744210;
+    }
+    .cert-expired {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    /* Training History */
+    .training-item {
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+    }
+    .training-item:last-child {
+      margin-bottom: 0;
+    }
+    .training-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+    .training-title {
+      font-weight: 600;
+    }
+    .training-meta {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .training-progress {
+      width: 100%;
+      height: 6px;
+      background: #edf2f7;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .training-progress-fill {
+      height: 100%;
+      background: var(--success);
+      border-radius: 3px;
+    }
+
+    /* Career Path */
+    .career-path {
+      position: relative;
+      padding-left: 2rem;
+    }
+    .career-path::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+    .career-step {
+      position: relative;
+      padding-bottom: 1.5rem;
+    }
+    .career-step:last-child {
+      padding-bottom: 0;
+    }
+    .career-dot {
+      position: absolute;
+      left: -2rem;
+      top: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3px solid var(--white);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .career-step.future .career-dot {
+      background: var(--white);
+      border-color: var(--primary);
+    }
+    .career-step.current .career-dot {
+      background: var(--success);
+      box-shadow: 0 0 0 2px var(--success);
+    }
+    .career-title {
+      font-weight: 600;
+    }
+    .career-period {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="skill" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['skill_career_mgmt']}
+            </div>
+            <h1>&#127891; {!T['skill_career_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <apex:commandButton value="&#128269; {!T['search']}"
+              action="{!search}"
+              styleClass="btn btn-outline"
+              rerender="mainForm"
+            />
+            <button type="button" class="btn btn-primary">
+              + {!T['register_skill']}
+            </button>
+          </div>
+        </div>
+
+        <div class="skill-content">
+          <div class="skill-grid">
+            <!-- Skill Matrix -->
+            <div class="skill-card">
+              <div class="skill-card-header">
+                <h2>&#128187; 技術スキル</h2>
+                <button type="button" class="btn btn-sm btn-outline">
+                  編集
+                </button>
+              </div>
+              <div class="skill-card-body">
+                <div class="skill-tags">
+                  <span class="skill-tag level-5">&#11088; Apex ★★★★★</span>
+                  <span class="skill-tag level-5">&#11088; LWC ★★★★★</span>
+                  <span class="skill-tag level-4">JavaScript ★★★★</span>
+                  <span class="skill-tag level-4">SOQL ★★★★</span>
+                  <span class="skill-tag level-3">Python ★★★</span>
+                  <span class="skill-tag level-3">React ★★★</span>
+                  <span class="skill-tag level-2">Java ★★</span>
+                  <span class="skill-tag level-2">AWS ★★</span>
+                  <span class="skill-tag level-1">Docker ★</span>
+                </div>
+
+                <div style="margin-top: 1.5rem">
+                  <h4 style="font-size: 0.9rem; margin: 0 0 0.8rem 0">
+                    &#128188; ビジネススキル
+                  </h4>
+                  <div class="skill-tags">
+                    <span class="skill-tag level-4">プロジェクト管理 ★★★★</span>
+                    <span class="skill-tag level-4">要件定義 ★★★★</span>
+                    <span class="skill-tag level-3">チームリード ★★★</span>
+                    <span class="skill-tag level-3">顧客折衝 ★★★</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Certifications -->
+            <div class="skill-card">
+              <div class="skill-card-header">
+                <h2>&#127942; 資格・認定</h2>
+                <button type="button" class="btn btn-sm btn-primary">
+                  + 追加
+                </button>
+              </div>
+              <div class="skill-card-body" style="padding: 0">
+                <ul class="cert-list">
+                  <li class="cert-item">
+                    <span class="cert-icon">&#9729;</span>
+                    <div class="cert-info">
+                      <div class="cert-name">
+                        Salesforce Platform Developer I
+                      </div>
+                      <div class="cert-date">
+                        取得: 2024/06/15 · 有効期限: 2027/06/15
+                      </div>
+                    </div>
+                    <span class="cert-badge cert-valid">有効</span>
+                  </li>
+                  <li class="cert-item">
+                    <span
+                      class="cert-icon"
+                      style="
+                        background: linear-gradient(135deg, #38a169, #2f855a);
+                      "
+                      >&#9729;</span
+                    >
+                    <div class="cert-info">
+                      <div class="cert-name">Salesforce Administrator</div>
+                      <div class="cert-date">
+                        取得: 2023/03/20 · 有効期限: 2026/03/20
+                      </div>
+                    </div>
+                    <span class="cert-badge cert-expiring">まもなく期限</span>
+                  </li>
+                  <li class="cert-item">
+                    <span
+                      class="cert-icon"
+                      style="
+                        background: linear-gradient(135deg, #ed8936, #dd6b20);
+                      "
+                      >&#128274;</span
+                    >
+                    <div class="cert-info">
+                      <div class="cert-name">AWS Solutions Architect</div>
+                      <div class="cert-date">
+                        取得: 2022/11/10 · 有効期限: 2025/11/10
+                      </div>
+                    </div>
+                    <span class="cert-badge cert-expired">期限切れ</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Training History -->
+            <div class="skill-card">
+              <div class="skill-card-header">
+                <h2>&#128218; 研修履歴</h2>
+                <button type="button" class="btn btn-sm btn-outline">
+                  すべて表示
+                </button>
+              </div>
+              <div class="skill-card-body">
+                <div class="training-item">
+                  <div class="training-header">
+                    <div>
+                      <div class="training-title">LWC Advanced Workshop</div>
+                      <div class="training-meta">2026/02 · JIP Academy</div>
+                    </div>
+                    <span class="cert-badge cert-valid">完了</span>
+                  </div>
+                  <div class="training-progress">
+                    <div
+                      class="training-progress-fill"
+                      style="width: 100%"
+                    ></div>
+                  </div>
+                </div>
+                <div class="training-item">
+                  <div class="training-header">
+                    <div>
+                      <div class="training-title">
+                        プロジェクトマネジメント基礎
+                      </div>
+                      <div class="training-meta">2026/03 · 進行中</div>
+                    </div>
+                    <span
+                      class="cert-badge"
+                      style="background: #bee3f8; color: #2a4365"
+                      >進行中</span
+                    >
+                  </div>
+                  <div class="training-progress">
+                    <div
+                      class="training-progress-fill"
+                      style="width: 65%; background: #4299e1"
+                    ></div>
+                  </div>
+                </div>
+                <div class="training-item">
+                  <div class="training-header">
+                    <div>
+                      <div class="training-title">AI/ML入門コース</div>
+                      <div class="training-meta">予定: 2026/04</div>
+                    </div>
+                    <span
+                      class="cert-badge"
+                      style="background: #edf2f7; color: #4a5568"
+                      >予定</span
+                    >
+                  </div>
+                  <div class="training-progress">
+                    <div class="training-progress-fill" style="width: 0%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Career Path -->
+            <div class="skill-card">
+              <div class="skill-card-header">
+                <h2>&#128200; キャリアパス</h2>
+                <button type="button" class="btn btn-sm btn-outline">
+                  計画編集
+                </button>
+              </div>
+              <div class="skill-card-body">
+                <div class="career-path">
+                  <div class="career-step">
+                    <div class="career-dot"></div>
+                    <div class="career-title">ジュニアエンジニア</div>
+                    <div class="career-period">2022/04 - 2023/03</div>
+                  </div>
+                  <div class="career-step">
+                    <div class="career-dot"></div>
+                    <div class="career-title">ミドルエンジニア</div>
+                    <div class="career-period">2023/04 - 2024/09</div>
+                  </div>
+                  <div class="career-step current">
+                    <div class="career-dot"></div>
+                    <div class="career-title">
+                      &#127775; シニアエンジニア（現在）
+                    </div>
+                    <div class="career-period">2024/10 - 現在</div>
+                  </div>
+                  <div class="career-step future">
+                    <div class="career-dot"></div>
+                    <div class="career-title" style="color: var(--text-light)">
+                      テックリード（目標）
+                    </div>
+                    <div class="career-period">2026/04 - ?</div>
+                  </div>
+                  <div class="career-step future">
+                    <div class="career-dot"></div>
+                    <div class="career-title" style="color: var(--text-light)">
+                      エンジニアリングマネージャー
+                    </div>
+                    <div class="career-period">将来目標</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

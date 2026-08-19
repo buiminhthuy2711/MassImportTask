@@ -1,0 +1,34 @@
+<template>
+    <lightning-card title="予算 vs 実績" icon-name="utility:moneybag">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <div class="kpi-row-top">
+                    <div class="kpi-box">
+                        <div class="kpi-label">予算</div>
+                        <div class="kpi-value kpi-budget">&yen;{formattedBudget}</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-label">実績</div>
+                        <div class={actualClass}>&yen;{formattedActual}</div>
+                    </div>
+                    <div class="kpi-box">
+                        <div class="kpi-label">残予算</div>
+                        <div class={remainingClass}>&yen;{formattedRemaining}</div>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas lwc:ref="chartCanvas"></canvas>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-label">消化率: {usagePercent}%</div>
+                    <div class="progress-track">
+                        <div class={progressBarClass} style={progressBarStyle}></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

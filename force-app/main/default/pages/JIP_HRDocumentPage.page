@@ -1,0 +1,591 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRDocumentController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --purple: #805ad5;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Content */
+    .doc-content {
+      padding: 1.5rem;
+    }
+
+    /* Search Bar */
+    .search-bar {
+      background: var(--white);
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .search-input {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #f7fafc;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .search-input input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    /* Category Cards */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .category-card {
+      background: var(--white);
+      padding: 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .category-card:hover {
+      border-color: var(--primary-light);
+      transform: translateY(-2px);
+    }
+    .category-card.active {
+      border-color: var(--primary);
+      background: #ebf8ff;
+    }
+    .category-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .category-info h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .category-count {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+
+    /* Document List */
+    .doc-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .doc-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .doc-header h2 {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .doc-table th,
+    .doc-table td {
+      padding: 0.8rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .doc-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+    }
+    .doc-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .doc-name {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .doc-icon {
+      font-size: 1.5rem;
+    }
+    .doc-title {
+      font-weight: 600;
+    }
+    .doc-meta {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    .doc-tag {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .tag-contract {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .tag-policy {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .tag-template {
+      background: #e9d8fd;
+      color: #553c9a;
+    }
+    .tag-form {
+      background: #feebc8;
+      color: #744210;
+    }
+
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.3rem;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      background: #fafbfc;
+      margin-top: 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-zone:hover {
+      border-color: var(--primary-light);
+      background: #ebf8ff;
+    }
+    .upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .upload-text {
+      color: var(--text-light);
+      font-size: 0.9rem;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="document" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['doc_mgmt']}
+            </div>
+            <h1>&#128193; {!T['doc_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <button type="button" class="btn btn-outline">
+              &#128229; {!T['templates']}
+            </button>
+            <apex:commandButton value="&#128194; {!T['upload']}"
+              action="{!openUploadModal}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+            />
+          </div>
+        </div>
+
+        <div class="doc-content">
+          <!-- Search Bar -->
+          <div class="search-bar">
+            <div class="search-input">
+              <span>&#128269;</span>
+              <input type="text" placeholder="ドキュメントを検索..." />
+            </div>
+            <select
+              style="
+                padding: 0.6rem 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+              "
+            >
+              <option>すべてのタイプ</option>
+              <option>契約書</option>
+              <option>規程・ポリシー</option>
+              <option>テンプレート</option>
+              <option>申請書類</option>
+            </select>
+            <select
+              style="
+                padding: 0.6rem 1rem;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+              "
+            >
+              <option>最終更新日</option>
+              <option>名前順</option>
+              <option>サイズ順</option>
+            </select>
+          </div>
+
+          <!-- Category Cards -->
+          <div class="category-grid">
+            <div class="category-card active">
+              <div class="category-icon" style="background: #ebf8ff">
+                &#128196;
+              </div>
+              <div class="category-info">
+                <h3>契約書類</h3>
+                <div class="category-count">48件</div>
+              </div>
+            </div>
+            <div class="category-card">
+              <div class="category-icon" style="background: #f0fff4">
+                &#128220;
+              </div>
+              <div class="category-info">
+                <h3>規程・ポリシー</h3>
+                <div class="category-count">32件</div>
+              </div>
+            </div>
+            <div class="category-card">
+              <div class="category-icon" style="background: #faf5ff">
+                &#128221;
+              </div>
+              <div class="category-info">
+                <h3>テンプレート</h3>
+                <div class="category-count">24件</div>
+              </div>
+            </div>
+            <div class="category-card">
+              <div class="category-icon" style="background: #fffaf0">
+                &#128203;
+              </div>
+              <div class="category-info">
+                <h3>申請フォーム</h3>
+                <div class="category-count">18件</div>
+              </div>
+            </div>
+            <div class="category-card">
+              <div class="category-icon" style="background: #fff5f5">
+                &#128274;
+              </div>
+              <div class="category-info">
+                <h3>機密文書</h3>
+                <div class="category-count">12件</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Document List -->
+          <div class="doc-card">
+            <div class="doc-header">
+              <h2>&#128196; 契約書類</h2>
+              <span style="color: var(--text-light); font-size: 0.85rem"
+                >48件</span
+              >
+            </div>
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th style="width: 40px"><input type="checkbox" /></th>
+                  <th>ドキュメント名</th>
+                  <th>タイプ</th>
+                  <th>サイズ</th>
+                  <th>更新日</th>
+                  <th>更新者</th>
+                  <th style="width: 100px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td>
+                    <div class="doc-name">
+                      <span class="doc-icon">&#128196;</span>
+                      <div>
+                        <div class="doc-title">
+                          雇用契約書_テンプレート_v2.docx
+                        </div>
+                        <div class="doc-meta">Word文書</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="doc-tag tag-contract">契約書</span></td>
+                  <td>245 KB</td>
+                  <td>2026/02/28</td>
+                  <td>人事部 佐藤</td>
+                  <td>
+                    <button type="button" class="btn-icon" title="ダウンロード">
+                      &#128229;
+                    </button>
+                    <button type="button" class="btn-icon" title="共有">
+                      &#128279;
+                    </button>
+                    <button type="button" class="btn-icon" title="削除">
+                      &#128465;
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td>
+                    <div class="doc-name">
+                      <span class="doc-icon" style="color: #e53e3e"
+                        >&#128195;</span
+                      >
+                      <div>
+                        <div class="doc-title">
+                          秘密保持契約書(NDA)_2026.pdf
+                        </div>
+                        <div class="doc-meta">PDF文書</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="doc-tag tag-contract">契約書</span></td>
+                  <td>1.2 MB</td>
+                  <td>2026/02/15</td>
+                  <td>法務部 田中</td>
+                  <td>
+                    <button type="button" class="btn-icon" title="ダウンロード">
+                      &#128229;
+                    </button>
+                    <button type="button" class="btn-icon" title="共有">
+                      &#128279;
+                    </button>
+                    <button type="button" class="btn-icon" title="削除">
+                      &#128465;
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td>
+                    <div class="doc-name">
+                      <span class="doc-icon" style="color: #38a169"
+                        >&#128462;</span
+                      >
+                      <div>
+                        <div class="doc-title">就業規則_2026年度版.xlsx</div>
+                        <div class="doc-meta">Excel文書</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="doc-tag tag-policy">規程</span></td>
+                  <td>890 KB</td>
+                  <td>2026/01/10</td>
+                  <td>人事部 山田</td>
+                  <td>
+                    <button type="button" class="btn-icon" title="ダウンロード">
+                      &#128229;
+                    </button>
+                    <button type="button" class="btn-icon" title="共有">
+                      &#128279;
+                    </button>
+                    <button type="button" class="btn-icon" title="削除">
+                      &#128465;
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td>
+                    <div class="doc-name">
+                      <span class="doc-icon">&#128196;</span>
+                      <div>
+                        <div class="doc-title">退職届_テンプレート.docx</div>
+                        <div class="doc-meta">Word文書</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="doc-tag tag-template">テンプレート</span>
+                  </td>
+                  <td>125 KB</td>
+                  <td>2025/12/20</td>
+                  <td>人事部 佐藤</td>
+                  <td>
+                    <button type="button" class="btn-icon" title="ダウンロード">
+                      &#128229;
+                    </button>
+                    <button type="button" class="btn-icon" title="共有">
+                      &#128279;
+                    </button>
+                    <button type="button" class="btn-icon" title="削除">
+                      &#128465;
+                    </button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td>
+                    <div class="doc-name">
+                      <span class="doc-icon" style="color: #e53e3e"
+                        >&#128195;</span
+                      >
+                      <div>
+                        <div class="doc-title">経費申請書_2026年版.pdf</div>
+                        <div class="doc-meta">PDF文書</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="doc-tag tag-form">申請書</span></td>
+                  <td>340 KB</td>
+                  <td>2026/01/05</td>
+                  <td>経理部 鈴木</td>
+                  <td>
+                    <button type="button" class="btn-icon" title="ダウンロード">
+                      &#128229;
+                    </button>
+                    <button type="button" class="btn-icon" title="共有">
+                      &#128279;
+                    </button>
+                    <button type="button" class="btn-icon" title="削除">
+                      &#128465;
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Upload Zone -->
+          <div class="upload-zone">
+            <div class="upload-icon">&#128194;</div>
+            <div class="upload-text">
+              ファイルをドラッグ＆ドロップ、またはクリックしてアップロード
+            </div>
+            <div
+              style="
+                font-size: 0.78rem;
+                color: var(--text-light);
+                margin-top: 0.5rem;
+              "
+            >
+              対応形式: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX (最大50MB)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

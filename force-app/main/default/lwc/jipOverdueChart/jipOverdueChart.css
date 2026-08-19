@@ -1,0 +1,29 @@
+.chart-wrapper {
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+.alert-badge {
+    padding: 0.25rem 0.7rem;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.alert-danger {
+    background: #fff0f0;
+    color: #d9534f;
+}
+.alert-ok {
+    background: #e6f7ee;
+    color: #2baf6a;
+}
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+}
+.success-msg {
+    color: #2baf6a;
+    font-weight: 600;
+}

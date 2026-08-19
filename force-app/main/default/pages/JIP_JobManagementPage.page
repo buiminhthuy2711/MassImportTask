@@ -1,0 +1,732 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_JobManagementController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #0176d3;
+      --primary-dark: #014486;
+      --danger: #ea001e;
+      --danger-dark: #ba0517;
+      --success: #2e844a;
+      --bg: #f3f3f3;
+      --white: #ffffff;
+      --text: #181818;
+      --text-light: #444444;
+      --border: #dddbda;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --accent: #e87600;
+      --accent-dark: #b85d00;
+    }
+    .jipa-container {
+      max-width: 1350px;
+      margin: 2rem auto;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      background: var(--bg);
+      min-height: 80vh;
+    }
+    .jipa-header {
+      background: linear-gradient(135deg, #e87600, #b34700);
+      color: var(--white);
+      padding: 1.5rem 2rem;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .jipa-header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .jipa-header .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.85;
+      margin-top: 0.25rem;
+    }
+    .jipa-body {
+      padding: 1.5rem 2rem 2rem;
+      background: var(--white);
+      border-radius: 0 0 8px 8px;
+      box-shadow: var(--shadow);
+    }
+    .jipa-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .jipa-toolbar input[type="text"] {
+      padding: 0.5rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      width: 240px;
+      outline: none;
+    }
+    .jipa-toolbar input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.15);
+    }
+    .jipa-toolbar select {
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .jipa-toolbar select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.15);
+    }
+    .btn {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--white);
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    .btn-secondary {
+      background: #e5e5e5;
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: #d4d4d4;
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: var(--white);
+    }
+    .btn-danger:hover {
+      background: var(--danger-dark);
+    }
+    .btn-success {
+      background: var(--success);
+      color: var(--white);
+    }
+    .btn-success:hover {
+      background: #236b3b;
+    }
+    .btn-sm {
+      padding: 0.32rem 0.75rem;
+      font-size: 0.84rem;
+    }
+    .btn-new {
+      margin-left: auto;
+    }
+
+    /* Table */
+    .jipa-table-wrap {
+      overflow-x: auto;
+    }
+    .jipa-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 1100px;
+    }
+    .jipa-table thead th {
+      background: #f7f7f7;
+      color: var(--text);
+      font-weight: 700;
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      font-size: 0.85rem;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    .jipa-table tbody td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.88rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .jipa-table tbody tr:hover {
+      background: #fff8f0;
+    }
+    .jipa-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .jipa-table .actions {
+      display: flex;
+      gap: 0.35rem;
+    }
+    .jipa-empty {
+      text-align: center;
+      color: #999;
+      padding: 2.5rem 0;
+      font-size: 1.05rem;
+    }
+    .jipa-count {
+      color: var(--text-light);
+      font-size: 0.88rem;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Status badges */
+    .badge {
+      padding: 0.2rem 0.55rem;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .badge-open {
+      background: #e6f9ed;
+      color: #2e844a;
+    }
+    .badge-onhold {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .badge-closed {
+      background: #f0f0f0;
+      color: #666;
+    }
+    .badge-none {
+      background: #eef4ff;
+      color: #0176d3;
+    }
+    .badge-high {
+      background: #ffeaea;
+      color: #ea001e;
+    }
+    .badge-medium {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .badge-low {
+      background: #e6f9ed;
+      color: #2e844a;
+    }
+
+    /* Summary Cards */
+    .summary-cards {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .summary-card {
+      flex: 1;
+      min-width: 130px;
+      padding: 1rem 1.2rem;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+    .summary-card .card-number {
+      font-size: 1.8rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .summary-card .card-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 0.3rem;
+    }
+    .card-total {
+      background: #fff5eb;
+    }
+    .card-total .card-number {
+      color: #e87600;
+    }
+    .card-total .card-label {
+      color: #b85d00;
+    }
+    .card-open {
+      background: #e6f9ed;
+    }
+    .card-open .card-number {
+      color: #2e844a;
+    }
+    .card-open .card-label {
+      color: #155724;
+    }
+    .card-onhold {
+      background: #fff3cd;
+    }
+    .card-onhold .card-number {
+      color: #856404;
+    }
+    .card-onhold .card-label {
+      color: #6c5100;
+    }
+    .card-closed {
+      background: #f0f0f0;
+    }
+    .card-closed .card-number {
+      color: #666;
+    }
+    .card-closed .card-label {
+      color: #444;
+    }
+
+    /* Budget display */
+    .budget-range {
+      font-size: 0.82rem;
+      color: var(--text-light);
+    }
+    .budget-range strong {
+      color: var(--text);
+    }
+
+    /* Modal */
+    .jipa-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 9000;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 3vh;
+      overflow-y: auto;
+    }
+    .jipa-modal {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      width: 720px;
+      max-width: 95vw;
+      margin-bottom: 3vh;
+      animation: fadeInModal 0.18s;
+    }
+    @keyframes fadeInModal {
+      from {
+        opacity: 0;
+        transform: translateY(-16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .jipa-modal-header {
+      background: linear-gradient(135deg, #e87600, #b34700);
+      color: var(--white);
+      padding: 1.1rem 1.5rem;
+      border-radius: 10px 10px 0 0;
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+    .jipa-modal-body {
+      padding: 1.2rem 1.5rem 0.5rem;
+    }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.35rem;
+      margin: 1.2rem 0 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .section-title:first-child {
+      margin-top: 0;
+    }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 0;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group input[type="date"],
+    .form-group input[type="number"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(1, 118, 211, 0.12);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    .required-mark {
+      color: #ea001e;
+    }
+    .jipa-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .jipa-messages {
+      margin-bottom: 1rem;
+    }
+    .filter-label {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      font-weight: 600;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="jipa-container">
+      <!-- Header -->
+      <div class="jipa-header">
+        <div>
+          <h1>&#128188; 求人管理システム</h1>
+          <div class="subtitle">
+            Job Management - 求人情報の一覧・登録・編集・削除
+          </div>
+        </div>
+      </div>
+
+      <div class="jipa-body">
+        <!-- Messages -->
+        <div class="jipa-messages">
+          <apex:messages id="pageMessages" layout="list" />
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+          <div class="summary-card card-total">
+            <div class="card-number">{!jobs.size}</div>
+            <div class="card-label">全求人</div>
+          </div>
+          <apex:variable var="openCount" value="{!0}" />
+          <apex:variable var="onholdCount" value="{!0}" />
+          <apex:variable var="closedCount" value="{!0}" />
+          <apex:repeat value="{!jobs}" var="j">
+            <apex:variable var="openCount"
+              value="{!IF(j.Status__c == 'Open', openCount + 1, openCount)}"
+            />
+            <apex:variable var="onholdCount"
+              value="{!IF(j.Status__c == 'On Hold', onholdCount + 1, onholdCount)}"
+            />
+            <apex:variable var="closedCount"
+              value="{!IF(j.Status__c == 'Closed', closedCount + 1, closedCount)}"
+            />
+          </apex:repeat>
+          <div class="summary-card card-open">
+            <div class="card-number">{!openCount}</div>
+            <div class="card-label">募集中 (Open)</div>
+          </div>
+          <div class="summary-card card-onhold">
+            <div class="card-number">{!onholdCount}</div>
+            <div class="card-label">保留中 (On Hold)</div>
+          </div>
+          <div class="summary-card card-closed">
+            <div class="card-number">{!closedCount}</div>
+            <div class="card-label">終了 (Closed)</div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="jipa-toolbar">
+          <apex:inputText value="{!searchKeyword}"
+            html-placeholder="求人名・勤務地・企業名で検索..."
+          />
+          <span class="filter-label">ステータス:</span>
+          <apex:selectList value="{!filterStatus}" size="1">
+            <apex:selectOptions value="{!statusFilterOptions}" />
+          </apex:selectList>
+          <span class="filter-label">優先度:</span>
+          <apex:selectList value="{!filterPriority}" size="1">
+            <apex:selectOptions value="{!priorityFilterOptions}" />
+          </apex:selectList>
+          <apex:commandButton value="&#128269; 検索"
+            action="{!searchJobs}"
+            reRender="mainForm"
+            styleClass="btn btn-primary"
+          />
+          <apex:commandButton value="クリア"
+            action="{!clearSearch}"
+            reRender="mainForm"
+            styleClass="btn btn-secondary"
+          />
+          <apex:commandButton value="&#10133; 新規登録"
+            action="{!openNewModal}"
+            reRender="mainForm"
+            styleClass="btn btn-success btn-new"
+          />
+        </div>
+
+        <!-- Count -->
+        <div class="jipa-count">検索結果: <strong>{!jobs.size}</strong> 件</div>
+
+        <!-- Data Table -->
+        <apex:outputPanel rendered="{!jobs.size > 0}">
+          <div class="jipa-table-wrap">
+            <table class="jipa-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Job ID</th>
+                  <th>求人タイトル</th>
+                  <th>企業</th>
+                  <th>ステータス</th>
+                  <th>優先度</th>
+                  <th>予算 (月額)</th>
+                  <th>勤務地</th>
+                  <th>日本語</th>
+                  <th>開始日</th>
+                  <th>期間</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <apex:variable var="rowNum" value="{!0}" />
+                <apex:repeat value="{!jobs}" var="j">
+                  <apex:variable var="rowNum" value="{!rowNum + 1}" />
+                  <tr>
+                    <td>{!rowNum}</td>
+                    <td><strong>{!j.Name}</strong></td>
+                    <td>{!j.JobTitle__c}</td>
+                    <td>{!j.Company__r.Name}</td>
+                    <td>
+                      <apex:outputPanel rendered="{!j.Status__c == 'Open'}">
+                        <span class="badge badge-open">Open</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!j.Status__c == 'On Hold'}">
+                        <span class="badge badge-onhold">On Hold</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!j.Status__c == 'Closed'}">
+                        <span class="badge badge-closed">Closed</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!j.Status__c == 'None'}">
+                        <span class="badge badge-none">None</span>
+                      </apex:outputPanel>
+                    </td>
+                    <td>
+                      <apex:outputPanel rendered="{!j.Priority__c == 'High'}">
+                        <span class="badge badge-high">High</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!j.Priority__c == 'Medium'}">
+                        <span class="badge badge-medium">Medium</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!j.Priority__c == 'Low'}">
+                        <span class="badge badge-low">Low</span>
+                      </apex:outputPanel>
+                    </td>
+                    <td>
+                      <span class="budget-range">
+                        <apex:outputText value="{0, number, ¥#,###}">
+                          <apex:param value="{!j.BudgetRateMin__c}" />
+                        </apex:outputText>
+                        &nbsp;~&nbsp;
+                        <apex:outputText value="{0, number, ¥#,###}">
+                          <apex:param value="{!j.BudgetRateMax__c}" />
+                        </apex:outputText>
+                      </span>
+                    </td>
+                    <td>{!j.WorkLocation__c}</td>
+                    <td>{!j.RequiredJapaneseLevel__c}</td>
+                    <td>
+                      <apex:outputText value="{0,date,yyyy/MM/dd}">
+                        <apex:param value="{!j.StartDate__c}" />
+                      </apex:outputText>
+                    </td>
+                    <td>
+                      <apex:outputPanel rendered="{!j.DurationMonths__c != null}"
+                      >
+                        {!FLOOR(j.DurationMonths__c)}ヶ月
+                      </apex:outputPanel>
+                    </td>
+                    <td class="actions">
+                      <apex:commandButton value="&#9998; 編集"
+                        action="{!openEditModal}"
+                        reRender="mainForm"
+                        styleClass="btn btn-primary btn-sm"
+                      >
+                        <apex:param name="editId"
+                          value="{!j.Id}"
+                          assignTo="{!currentJob}"
+                        />
+                      </apex:commandButton>
+                      <apex:commandButton value="&#128465; 削除"
+                        action="{!deleteJob}"
+                        reRender="mainForm"
+                        styleClass="btn btn-danger btn-sm"
+                        onclick="
+                          if (
+                            !confirm('この求人を削除してもよろしいですか？')
+                          ) {
+                            return false;
+                          }
+                        "
+                      >
+                        <apex:param name="deleteId"
+                          value="{!j.Id}"
+                          assignTo="{!deleteJobId}"
+                        />
+                      </apex:commandButton>
+                    </td>
+                  </tr>
+                </apex:repeat>
+              </tbody>
+            </table>
+          </div>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!jobs.size == 0}">
+          <div class="jipa-empty">
+            求人データがありません。「新規登録」ボタンから求人を追加してください。
+          </div>
+        </apex:outputPanel>
+      </div>
+    </div>
+
+    <!-- Modal: New / Edit -->
+    <apex:outputPanel rendered="{!showModal}">
+      <div class="jipa-modal-overlay">
+        <div class="jipa-modal">
+          <div class="jipa-modal-header">
+            <apex:outputPanel rendered="{!!isEditMode}"
+              >&#10133; 新規求人登録</apex:outputPanel>
+            <apex:outputPanel rendered="{!isEditMode}"
+              >&#9998; 求人情報編集</apex:outputPanel>
+          </div>
+          <div class="jipa-modal-body">
+            <!-- Section: 基本情報 -->
+            <div class="section-title">&#128203; 基本情報</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>求人タイトル <span class="required-mark">*</span></label>
+                <apex:inputText value="{!currentJob.JobTitle__c}"
+                  html-placeholder="例: Javaエンジニア"
+                />
+              </div>
+              <div class="form-group">
+                <label>企業 <span class="required-mark">*</span></label>
+                <apex:inputField value="{!currentJob.Company__c}" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>ステータス <span class="required-mark">*</span></label>
+                <apex:inputField value="{!currentJob.Status__c}" />
+              </div>
+              <div class="form-group">
+                <label>優先度 <span class="required-mark">*</span></label>
+                <apex:inputField value="{!currentJob.Priority__c}" />
+              </div>
+            </div>
+
+            <!-- Section: 条件 -->
+            <div class="section-title">&#128176; 予算・条件</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>予算下限 (月額)</label>
+                <apex:inputField value="{!currentJob.BudgetRateMin__c}" />
+              </div>
+              <div class="form-group">
+                <label>予算上限 (月額)</label>
+                <apex:inputField value="{!currentJob.BudgetRateMax__c}" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>勤務地</label>
+                <apex:inputText value="{!currentJob.WorkLocation__c}"
+                  html-placeholder="例: 東京都港区"
+                />
+              </div>
+              <div class="form-group">
+                <label>必要日本語レベル</label>
+                <apex:inputField value="{!currentJob.RequiredJapaneseLevel__c}"
+                />
+              </div>
+            </div>
+
+            <!-- Section: スケジュール -->
+            <div class="section-title">&#128197; スケジュール</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>開始日</label>
+                <apex:inputField value="{!currentJob.StartDate__c}" />
+              </div>
+              <div class="form-group">
+                <label>期間 (月)</label>
+                <apex:inputField value="{!currentJob.DurationMonths__c}" />
+              </div>
+            </div>
+
+            <!-- Section: 詳細 -->
+            <div class="section-title">&#128221; 詳細説明</div>
+            <div class="form-row">
+              <div class="form-group">
+                <apex:inputField value="{!currentJob.Description__c}"
+                  style="width: 100%; min-height: 100px"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="jipa-modal-footer">
+            <apex:commandButton value="キャンセル"
+              action="{!closeModal}"
+              reRender="mainForm"
+              styleClass="btn btn-secondary"
+            />
+            <apex:commandButton value="{!IF(isEditMode, '&#9998; 更新する', '&#10133; 登録する')}"
+              action="{!saveJob}"
+              reRender="mainForm"
+              styleClass="btn btn-primary"
+            />
+          </div>
+        </div>
+      </div>
+    </apex:outputPanel>
+  </apex:form>
+</apex:page>

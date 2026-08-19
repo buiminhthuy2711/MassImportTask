@@ -1,0 +1,659 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRSecurityController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --purple: #805ad5;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Content */
+    .security-content {
+      padding: 1.5rem;
+    }
+
+    /* Alert Banner */
+    .alert-banner {
+      background: linear-gradient(135deg, #fed7d7, #fff5f5);
+      border: 1px solid #fc8181;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .alert-icon {
+      font-size: 1.5rem;
+    }
+    .alert-content {
+      flex: 1;
+    }
+    .alert-title {
+      font-weight: 600;
+      color: #742a2a;
+    }
+    .alert-desc {
+      font-size: 0.85rem;
+      color: #9b2c2c;
+    }
+
+    /* Stats Row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--white);
+      padding: 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .stat-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+    }
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .stat-label {
+      font-size: 0.82rem;
+      color: var(--text-light);
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .stat-trend {
+      font-size: 0.75rem;
+      margin-top: 0.3rem;
+    }
+
+    /* Card Grid */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    .sec-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .sec-card-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sec-card-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .sec-card-body {
+      padding: 1.2rem;
+    }
+
+    /* Audit Log */
+    .audit-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .audit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 0.8rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .audit-item:last-child {
+      border-bottom: none;
+    }
+    .audit-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .audit-info {
+      flex: 1;
+    }
+    .audit-action {
+      font-weight: 500;
+    }
+    .audit-meta {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      display: flex;
+      gap: 1rem;
+    }
+    .audit-level {
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .level-info {
+      background: #bee3f8;
+      color: #2a4365;
+    }
+    .level-warning {
+      background: #feebc8;
+      color: #744210;
+    }
+    .level-critical {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .level-success {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    /* Access Control Table */
+    .access-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .access-table th,
+    .access-table td {
+      padding: 0.7rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .access-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .access-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .toggle-switch {
+      width: 40px;
+      height: 22px;
+      background: #cbd5e0;
+      border-radius: 11px;
+      position: relative;
+      cursor: pointer;
+    }
+    .toggle-switch.active {
+      background: var(--success);
+    }
+    .toggle-switch::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+    }
+    .toggle-switch.active::before {
+      transform: translateX(18px);
+    }
+
+    /* Compliance Checklist */
+    .compliance-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .compliance-item:last-child {
+      margin-bottom: 0;
+    }
+    .compliance-icon {
+      font-size: 1.2rem;
+    }
+    .compliance-info {
+      flex: 1;
+    }
+    .compliance-name {
+      font-weight: 500;
+    }
+    .compliance-desc {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .compliance-status {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-ok {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status-warn {
+      background: #feebc8;
+      color: #744210;
+    }
+    .status-fail {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="security" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['security_compliance']}
+            </div>
+            <h1>&#128274; {!T['security_compliance']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <apex:commandButton value="&#128196; {!T['audit_report']}"
+              action="{!exportLogs}"
+              styleClass="btn btn-outline"
+              rerender="mainForm"
+            />
+            <button type="button" class="btn btn-primary">
+              &#128295; {!T['security_settings']}
+            </button>
+          </div>
+        </div>
+
+        <div class="security-content">
+          <!-- Alert Banner -->
+          <div class="alert-banner">
+            <span class="alert-icon">&#9888;</span>
+            <div class="alert-content">
+              <div class="alert-title">セキュリティアラート</div>
+              <div class="alert-desc">
+                過去24時間で3件の不審なログイン試行を検出しました。詳細を確認してください。
+              </div>
+            </div>
+            <button type="button" class="btn btn-danger">確認する</button>
+          </div>
+
+          <!-- Stats Row -->
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-icon" style="background: #c6f6d5">&#9989;</div>
+                <span class="stat-label">セキュリティスコア</span>
+              </div>
+              <div class="stat-value" style="color: var(--success)">92/100</div>
+              <div class="stat-trend" style="color: var(--success)">
+                &#8593; 前月比 +5pt
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-icon" style="background: #bee3f8">
+                  &#128272;
+                </div>
+                <span class="stat-label">アクティブセッション</span>
+              </div>
+              <div class="stat-value">847</div>
+              <div class="stat-trend" style="color: var(--text-light)">
+                現在のログインユーザー
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-icon" style="background: #feebc8">&#9888;</div>
+                <span class="stat-label">セキュリティイベント</span>
+              </div>
+              <div class="stat-value" style="color: var(--warning)">12</div>
+              <div class="stat-trend" style="color: var(--text-light)">
+                今日の検出件数
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-icon" style="background: #e9d8fd">
+                  &#128737;
+                </div>
+                <span class="stat-label">2FAカバレッジ</span>
+              </div>
+              <div class="stat-value" style="color: var(--purple)">98.2%</div>
+              <div class="stat-trend" style="color: var(--success)">
+                &#8593; +1.5%
+              </div>
+            </div>
+          </div>
+
+          <div class="card-grid">
+            <!-- Audit Log -->
+            <div class="sec-card">
+              <div class="sec-card-header">
+                <h3>&#128220; 監査ログ</h3>
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  style="font-size: 0.78rem; padding: 0.3rem 0.6rem"
+                >
+                  すべて表示
+                </button>
+              </div>
+              <div class="sec-card-body" style="padding: 0">
+                <ul class="audit-list" style="padding: 0.5rem 1rem">
+                  <li class="audit-item">
+                    <div class="audit-icon" style="background: #fed7d7">
+                      &#128683;
+                    </div>
+                    <div class="audit-info">
+                      <div class="audit-action">不正ログイン試行をブロック</div>
+                      <div class="audit-meta">
+                        <span>IP: 192.168.1.xxx</span>
+                        <span>2026/03/04 14:32</span>
+                      </div>
+                    </div>
+                    <span class="audit-level level-critical">重大</span>
+                  </li>
+                  <li class="audit-item">
+                    <div class="audit-icon" style="background: #feebc8">
+                      &#128273;
+                    </div>
+                    <div class="audit-info">
+                      <div class="audit-action">パスワード変更 - 山田太郎</div>
+                      <div class="audit-meta">
+                        <span>社員ID: EMP001</span>
+                        <span>2026/03/04 13:15</span>
+                      </div>
+                    </div>
+                    <span class="audit-level level-warning">警告</span>
+                  </li>
+                  <li class="audit-item">
+                    <div class="audit-icon" style="background: #bee3f8">
+                      &#128100;
+                    </div>
+                    <div class="audit-info">
+                      <div class="audit-action">
+                        新規ユーザー作成 - 新入社員A
+                      </div>
+                      <div class="audit-meta">
+                        <span>作成者: 人事部 佐藤</span>
+                        <span>2026/03/04 11:00</span>
+                      </div>
+                    </div>
+                    <span class="audit-level level-info">情報</span>
+                  </li>
+                  <li class="audit-item">
+                    <div class="audit-icon" style="background: #c6f6d5">
+                      &#9989;
+                    </div>
+                    <div class="audit-info">
+                      <div class="audit-action">権限設定変更 - 開発部</div>
+                      <div class="audit-meta">
+                        <span>変更者: システム管理者</span>
+                        <span>2026/03/04 10:30</span>
+                      </div>
+                    </div>
+                    <span class="audit-level level-success">成功</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Compliance Checklist -->
+            <div class="sec-card">
+              <div class="sec-card-header">
+                <h3>&#9989; コンプライアンスチェック</h3>
+                <span style="font-size: 0.78rem; color: var(--text-light)"
+                  >最終確認: 2026/03/01</span
+                >
+              </div>
+              <div class="sec-card-body">
+                <div class="compliance-item">
+                  <span class="compliance-icon">&#128274;</span>
+                  <div class="compliance-info">
+                    <div class="compliance-name">パスワードポリシー</div>
+                    <div class="compliance-desc">
+                      最低12文字、大小英数字記号必須
+                    </div>
+                  </div>
+                  <span class="compliance-status status-ok">準拠</span>
+                </div>
+                <div class="compliance-item">
+                  <span class="compliance-icon">&#128737;</span>
+                  <div class="compliance-info">
+                    <div class="compliance-name">二要素認証</div>
+                    <div class="compliance-desc">
+                      全管理者アカウントで有効化
+                    </div>
+                  </div>
+                  <span class="compliance-status status-ok">準拠</span>
+                </div>
+                <div class="compliance-item">
+                  <span class="compliance-icon">&#128451;</span>
+                  <div class="compliance-info">
+                    <div class="compliance-name">データ暗号化</div>
+                    <div class="compliance-desc">
+                      保存データはAES-256で暗号化
+                    </div>
+                  </div>
+                  <span class="compliance-status status-ok">準拠</span>
+                </div>
+                <div class="compliance-item">
+                  <span class="compliance-icon">&#128197;</span>
+                  <div class="compliance-info">
+                    <div class="compliance-name">アクセスログ保持</div>
+                    <div class="compliance-desc">
+                      90日間のログ保持（要件: 180日）
+                    </div>
+                  </div>
+                  <span class="compliance-status status-warn">要対応</span>
+                </div>
+                <div class="compliance-item">
+                  <span class="compliance-icon">&#127760;</span>
+                  <div class="compliance-info">
+                    <div class="compliance-name">GDPR対応</div>
+                    <div class="compliance-desc">
+                      個人情報削除リクエスト対応
+                    </div>
+                  </div>
+                  <span class="compliance-status status-ok">準拠</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Access Control -->
+            <div class="sec-card" style="grid-column: span 2">
+              <div class="sec-card-header">
+                <h3>&#128272; アクセス制御設定</h3>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  style="font-size: 0.78rem; padding: 0.3rem 0.6rem"
+                >
+                  + ルール追加
+                </button>
+              </div>
+              <div class="sec-card-body" style="padding: 0">
+                <table class="access-table">
+                  <thead>
+                    <tr>
+                      <th>リソース</th>
+                      <th>管理者</th>
+                      <th>人事部</th>
+                      <th>部門長</th>
+                      <th>一般社員</th>
+                      <th>状態</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>&#128100; 社員情報（基本）</strong></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td>
+                        <span class="compliance-status status-ok">有効</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>&#128176; 給与情報</strong></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td>
+                        <span class="compliance-status status-ok">有効</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>&#128220; 人事評価</strong></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td>
+                        <span class="compliance-status status-ok">有効</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>&#128203; 申請承認</strong></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td>
+                        <span class="compliance-status status-ok">有効</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>&#128295; システム設定</strong></td>
+                      <td><div class="toggle-switch active"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td><div class="toggle-switch"></div></td>
+                      <td>
+                        <span class="compliance-status status-ok">有効</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

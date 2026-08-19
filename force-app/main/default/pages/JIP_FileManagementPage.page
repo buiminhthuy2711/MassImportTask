@@ -1,0 +1,847 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_FileManagementController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --green: #2baf6a;
+      --green-dark: #239b5b;
+      --green-darker: #1a7a47;
+      --green-light: #e6f7ee;
+      --orange: #e8833a;
+      --red: #d9534f;
+      --blue: #5b9bd5;
+      --gray: #888;
+      --bg: #f5f5f5;
+      --white: #ffffff;
+      --text: #333;
+      --text-light: #666;
+      --border: #e0e0e0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .file-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* ===== MAIN AREA ===== */
+    .main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .file-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .file-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .project-select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* Toolbar */
+    .file-toolbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .file-toolbar .search-box {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex: 1;
+      max-width: 400px;
+    }
+    .file-toolbar .search-box input {
+      flex: 1;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.83rem;
+      outline: none;
+    }
+    .file-toolbar .search-box input:focus {
+      border-color: var(--green);
+    }
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-left: auto;
+    }
+
+    .btn {
+      padding: 0.35rem 0.8rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .btn-green {
+      background: var(--green);
+      color: #fff;
+    }
+    .btn-green:hover {
+      background: var(--green-dark);
+    }
+    .btn-blue {
+      background: var(--blue);
+      color: #fff;
+    }
+    .btn-blue:hover {
+      background: #4a8bc4;
+    }
+    .btn-orange {
+      background: var(--orange);
+      color: #fff;
+    }
+    .btn-orange:hover {
+      background: #d6742a;
+    }
+    .btn-red {
+      background: var(--red);
+      color: #fff;
+    }
+    .btn-red:hover {
+      background: #c9302c;
+    }
+    .btn-outline {
+      background: var(--white);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      background: #f0f0f0;
+    }
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.78rem;
+    }
+
+    /* Breadcrumb */
+    .file-breadcrumb {
+      padding: 0.5rem 1.5rem;
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .file-breadcrumb a {
+      color: var(--green);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .file-breadcrumb a:hover {
+      text-decoration: underline;
+    }
+    .file-breadcrumb .sep {
+      color: var(--gray);
+      margin: 0 0.2rem;
+    }
+    .file-breadcrumb .current {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* File table */
+    .file-body {
+      flex: 1;
+      overflow: auto;
+      padding: 1rem 1.5rem;
+    }
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .file-table thead th {
+      background: #fafafa;
+      text-align: left;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      border-bottom: 2px solid var(--border);
+    }
+    .file-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
+    }
+    .file-table tbody tr:hover {
+      background: #f8fdf9;
+    }
+    .file-table tbody td {
+      padding: 0.55rem 0.8rem;
+      font-size: 0.84rem;
+      vertical-align: middle;
+    }
+    .file-table .file-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .file-table .file-icon {
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .file-table .folder-link {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .file-table .folder-link:hover {
+      text-decoration: underline;
+    }
+    .file-table .file-link {
+      color: var(--text);
+      text-decoration: none;
+    }
+    .file-table .file-link:hover {
+      color: var(--green);
+    }
+    .file-table .actions-cell {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--gray);
+    }
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+      margin: 0.3rem 0;
+      font-size: 0.9rem;
+    }
+
+    /* Search results info */
+    .search-info {
+      padding: 0.5rem 1.5rem;
+      background: #fffbe6;
+      border-bottom: 1px solid #f0e0a0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .modal-box {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 1.5rem;
+      min-width: 380px;
+      max-width: 480px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    }
+    .modal-box h3 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .modal-box input,
+    .modal-box select {
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      outline: none;
+    }
+    .modal-box input:focus,
+    .modal-box select:focus {
+      border-color: var(--green);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    /* Upload section */
+    .upload-section {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .upload-section input[type="file"] {
+      font-size: 0.82rem;
+    }
+
+    /* Path column for search */
+    .path-badge {
+      background: #f0f0f0;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .file-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .toolbar-actions {
+        margin-left: 0;
+      }
+    }
+  </style>
+
+  <div class="file-wrap">
+    <!-- LEFT SIDEBAR (wrapped in form for ActivityFeedPanel's actionFunction) -->
+    <apex:form id="sidebarForm">
+      <c:JIP_ProjectSidebar projectId="{!selectedProjectId}"
+        projectName="{!selectedProjectName}"
+        activePage="file"
+      />
+    </apex:form>
+
+    <!-- MAIN CONTENT wraps all 3 forms -->
+    <div class="main-content">
+      <!-- FORM 1: Header + Toolbar + Search + New Folder -->
+      <apex:form id="mainForm">
+        <div class="file-header">
+          <h1>&#x1F4C1;&nbsp;{!T['file_management']}</h1>
+          <apex:selectList value="{!selectedProjectId}"
+            size="1"
+            multiselect="false"
+            styleClass="project-select"
+          >
+            <apex:selectOptions value="{!projectOptions}" />
+            <apex:actionSupport event="onchange" action="{!selectProject}" />
+          </apex:selectList>
+        </div>
+        <div class="file-toolbar">
+          <div class="search-box">
+            <apex:inputText value="{!searchKeyword}"
+              html-placeholder="{!T['search_placeholder']}"
+            />
+            <apex:commandButton value="{!T['search']}"
+              action="{!searchFiles}"
+              styleClass="btn btn-outline btn-sm"
+            />
+            <apex:commandButton value="{!T['clear']}"
+              action="{!clearSearch}"
+              styleClass="btn btn-outline btn-sm"
+              rendered="{!isSearchMode}"
+            />
+          </div>
+          <div class="toolbar-actions">
+            <apex:commandButton value="&#x1F4C1; {!T['new_folder']}"
+              action="{!openNewFolderModal}"
+              styleClass="btn btn-green"
+            />
+          </div>
+        </div>
+      </apex:form>
+
+      <!-- FORM 2: Upload (apex:inputFile must be in separate form from apex:actionFunction) -->
+      <apex:form id="uploadForm">
+        <div class="file-toolbar" style="border-top: none; padding-top: 0">
+          <div class="upload-section">
+            <apex:inputFile value="{!uploadFileBody}"
+              fileName="{!uploadFileName}"
+            />
+            <apex:commandButton value="&#x2B06; {!T['upload_file']}"
+              action="{!uploadFile}"
+              styleClass="btn btn-blue"
+            />
+          </div>
+        </div>
+      </apex:form>
+
+      <!-- FORM 3: ActionFunctions + File Table + Modals -->
+      <apex:form id="mainFormBottom">
+        <apex:actionFunction name="openRenameFn" action="{!openRenameModal}">
+          <apex:param name="renId" value="" assignTo="{!renameItemId}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="deleteItemFn" action="{!deleteItem}">
+          <apex:param name="delId" value="" assignTo="{!deleteItemId}" />
+        </apex:actionFunction>
+        <apex:actionFunction name="openMoveFn" action="{!openMoveModal}">
+          <apex:param name="movId" value="" assignTo="{!moveItemId}" />
+        </apex:actionFunction>
+
+        <!-- Search info -->
+        <apex:outputPanel rendered="{!isSearchMode}">
+          <div class="search-info">
+            &#x1F50D;&nbsp; 「{!searchKeyword}」{!T['search_results']}:
+            {!searchResults.size} {!T['items']}
+          </div>
+        </apex:outputPanel>
+
+        <!-- Breadcrumb (not in search mode) -->
+        <apex:outputPanel rendered="{!NOT(isSearchMode)}">
+          <div class="file-breadcrumb" id="breadcrumbArea">
+            <a href="javascript:void(0);" onclick="navigateToRootAF()"
+              >&#x1F3E0; {!T['root']}</a
+            >
+          </div>
+        </apex:outputPanel>
+
+        <!-- File body -->
+        <div class="file-body">
+          <apex:pageMessages />
+
+          <!-- SEARCH RESULTS -->
+          <apex:outputPanel rendered="{!isSearchMode}">
+            <apex:outputPanel rendered="{!searchWrappers.size == 0}">
+              <div class="empty-state">
+                <div class="empty-icon">&#x1F50D;</div>
+                <p>{!T['no_search_results']}</p>
+              </div>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!searchWrappers.size > 0}">
+              <table class="file-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40%">{!T['name']}</th>
+                    <th>{!T['location']}</th>
+                    <th>{!T['size']}</th>
+                    <th>{!T['file_type']}</th>
+                    <th>{!T['uploader']}</th>
+                    <th>{!T['updated_date']}</th>
+                    <th style="width: 120px">{!T['actions']}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!searchWrappers}" var="w">
+                    <tr>
+                      <td>
+                        <div class="file-name-cell">
+                          <span class="file-icon">{!w.fileIcon}</span>
+                          <apex:outputPanel rendered="{!w.file.IsFolder__c}">
+                            <a
+                              href="javascript:void(0);"
+                              class="folder-link"
+                              onclick="navigateToFolderAF('{!w.file.Id}')"
+                              >{!w.file.FileName__c}</a
+                            >
+                          </apex:outputPanel>
+                          <apex:outputPanel rendered="{!NOT(w.file.IsFolder__c)}"
+                          >
+                            <apex:outputPanel rendered="{!NOT(ISBLANK(w.file.ContentVersionId__c))}"
+                            >
+                              <a
+                                href="/sfc/servlet.shepherd/version/download/{!w.file.ContentVersionId__c}"
+                                class="file-link"
+                                target="_blank"
+                                >{!w.file.FileName__c}</a
+                              >
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!ISBLANK(w.file.ContentVersionId__c)}"
+                            >
+                              <span class="file-link"
+                                >{!w.file.FileName__c}</span
+                              >
+                            </apex:outputPanel>
+                          </apex:outputPanel>
+                        </div>
+                      </td>
+                      <td>
+                        <apex:outputPanel rendered="{!NOT(ISBLANK(w.file.ParentFolder__c))}"
+                        >
+                          <span class="path-badge"
+                            >{!w.file.ParentFolder__r.FileName__c}</span
+                          >
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!ISBLANK(w.file.ParentFolder__c)}"
+                        >
+                          <span class="path-badge">{!T['root']}</span>
+                        </apex:outputPanel>
+                      </td>
+                      <td>{!w.formattedSize}</td>
+                      <td>{!w.displayType}</td>
+                      <td>{!w.file.UploadedBy__c}</td>
+                      <td>
+                        <apex:outputText value="{0,date,yyyy/MM/dd HH:mm}">
+                          <apex:param value="{!w.file.LastModifiedDate}" />
+                        </apex:outputText>
+                      </td>
+                      <td>
+                        <div class="actions-cell">
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            onclick="openRenameFn('{!w.file.Id}')"
+                            title="{!T['rename']}"
+                          >
+                            &#x270F;
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            onclick="openMoveFn('{!w.file.Id}')"
+                            title="{!T['move']}"
+                          >
+                            &#x21B7;
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-red btn-sm"
+                            onclick="
+                              if (
+                                confirm(
+                                  '「{!JSENCODE(w.file.FileName__c)}」{!T['confirm_delete_file']}'
+                                )
+                              ) {
+                                deleteItemFn('{!w.file.Id}');
+                              }
+                            "
+                            title="{!T['delete']}"
+                          >
+                            &#x2716;
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </apex:repeat>
+                </tbody>
+              </table>
+            </apex:outputPanel>
+          </apex:outputPanel>
+
+          <!-- NORMAL FILE LIST -->
+          <apex:outputPanel rendered="{!NOT(isSearchMode)}">
+            <apex:outputPanel rendered="{!fileWrappers.size == 0}">
+              <div class="empty-state">
+                <div class="empty-icon">&#x1F4C2;</div>
+                <p>{!T['folder_empty']}</p>
+                <p style="font-size: 0.82rem; color: #aaa">
+                  {!T['folder_empty_hint']}
+                </p>
+              </div>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!fileWrappers.size > 0}">
+              <table class="file-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40%">{!T['name']}</th>
+                    <th>{!T['size']}</th>
+                    <th>{!T['file_type']}</th>
+                    <th>{!T['uploader']}</th>
+                    <th>{!T['updated_date']}</th>
+                    <th style="width: 140px">{!T['actions']}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!fileWrappers}" var="w">
+                    <tr>
+                      <td>
+                        <div class="file-name-cell">
+                          <span class="file-icon">{!w.fileIcon}</span>
+                          <apex:outputPanel rendered="{!w.file.IsFolder__c}">
+                            <a
+                              href="javascript:void(0);"
+                              class="folder-link"
+                              onclick="navigateToFolderAF('{!w.file.Id}')"
+                              >{!w.file.FileName__c}</a
+                            >
+                          </apex:outputPanel>
+                          <apex:outputPanel rendered="{!NOT(w.file.IsFolder__c)}"
+                          >
+                            <apex:outputPanel rendered="{!NOT(ISBLANK(w.file.ContentVersionId__c))}"
+                            >
+                              <a
+                                href="/sfc/servlet.shepherd/version/download/{!w.file.ContentVersionId__c}"
+                                class="file-link"
+                                target="_blank"
+                                >{!w.file.FileName__c}</a
+                              >
+                            </apex:outputPanel>
+                            <apex:outputPanel rendered="{!ISBLANK(w.file.ContentVersionId__c)}"
+                            >
+                              <span class="file-link"
+                                >{!w.file.FileName__c}</span
+                              >
+                            </apex:outputPanel>
+                          </apex:outputPanel>
+                        </div>
+                      </td>
+                      <td>{!w.formattedSize}</td>
+                      <td>{!w.displayType}</td>
+                      <td>{!w.file.UploadedBy__c}</td>
+                      <td>
+                        <apex:outputText value="{0,date,yyyy/MM/dd HH:mm}">
+                          <apex:param value="{!w.file.LastModifiedDate}" />
+                        </apex:outputText>
+                      </td>
+                      <td>
+                        <div class="actions-cell">
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            onclick="openRenameFn('{!w.file.Id}')"
+                            title="{!T['rename']}"
+                          >
+                            &#x270F;
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-outline btn-sm"
+                            onclick="openMoveFn('{!w.file.Id}')"
+                            title="{!T['move']}"
+                          >
+                            &#x21B7;
+                          </button>
+                          <apex:outputPanel rendered="{!NOT(w.file.IsFolder__c) && NOT(ISBLANK(w.file.ContentVersionId__c))}"
+                          >
+                            <a
+                              href="/sfc/servlet.shepherd/version/download/{!w.file.ContentVersionId__c}"
+                              class="btn btn-outline btn-sm"
+                              title="{!T['download']}"
+                              target="_blank"
+                              >&#x2B07;</a
+                            >
+                          </apex:outputPanel>
+                          <button
+                            type="button"
+                            class="btn btn-red btn-sm"
+                            onclick="
+                              if (
+                                confirm(
+                                  '「{!JSENCODE(w.file.FileName__c)}」{!T['confirm_delete_file']}'
+                                )
+                              ) {
+                                deleteItemFn('{!w.file.Id}');
+                              }
+                            "
+                            title="{!T['delete']}"
+                          >
+                            &#x2716;
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </apex:repeat>
+                </tbody>
+              </table>
+            </apex:outputPanel>
+          </apex:outputPanel>
+        </div>
+
+        <!-- NEW FOLDER MODAL -->
+        <apex:outputPanel rendered="{!showNewFolderModal}">
+          <div
+            class="modal-overlay"
+            onclick="
+              if (event.target === this) {
+                closeFolderModal();
+              }
+            "
+          >
+            <div class="modal-box">
+              <h3>&#x1F4C1; {!T['create_folder']}</h3>
+              <apex:inputText value="{!newFolderName}"
+                html-placeholder="{!T['enter_folder_name']}"
+              />
+              <div class="modal-actions">
+                <apex:commandButton value="{!T['cancel']}"
+                  action="{!closeNewFolderModal}"
+                  styleClass="btn btn-outline"
+                />
+                <apex:commandButton value="{!T['create']}"
+                  action="{!createFolder}"
+                  styleClass="btn btn-green"
+                />
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel>
+
+        <!-- RENAME MODAL -->
+        <apex:outputPanel rendered="{!showRenameModal}">
+          <div
+            class="modal-overlay"
+            onclick="
+              if (event.target === this) {
+                closeRenameModalFn();
+              }
+            "
+          >
+            <div class="modal-box">
+              <h3>&#x270F; {!T['rename']}</h3>
+              <apex:inputText value="{!renameNewName}"
+                html-placeholder="{!T['enter_new_name']}"
+              />
+              <div class="modal-actions">
+                <apex:commandButton value="{!T['cancel']}"
+                  action="{!closeRenameModal}"
+                  styleClass="btn btn-outline"
+                />
+                <apex:commandButton value="{!T['change']}"
+                  action="{!renameItem}"
+                  styleClass="btn btn-green"
+                />
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel>
+
+        <!-- MOVE MODAL -->
+        <apex:outputPanel rendered="{!showMoveModal}">
+          <div
+            class="modal-overlay"
+            onclick="
+              if (event.target === this) {
+                closeMoveModalFn();
+              }
+            "
+          >
+            <div class="modal-box">
+              <h3>&#x21B7; {!T['select_destination']}</h3>
+              <apex:selectList value="{!moveTargetFolderId}"
+                size="1"
+                multiselect="false"
+                style="width: 100%; margin-bottom: 1rem"
+              >
+                <apex:selectOptions value="{!moveTargetOptions}" />
+              </apex:selectList>
+              <div class="modal-actions">
+                <apex:commandButton value="{!T['cancel']}"
+                  action="{!closeMoveModal}"
+                  styleClass="btn btn-outline"
+                />
+                <apex:commandButton value="{!T['move']}"
+                  action="{!moveItem}"
+                  styleClass="btn btn-green"
+                />
+              </div>
+            </div>
+          </div>
+        </apex:outputPanel>
+      </apex:form>
+    </div>
+    <!-- close main-content -->
+  </div>
+  <!-- close file-wrap -->
+
+  <script>
+    // Folder navigation via URL redirect (cannot use actionFunction because apex:inputFile is in the same form)
+    var __projectId = '{!JSENCODE(selectedProjectId)}';
+    var __rootLabel = '{!JSENCODE(T['root'])}';
+
+    function navigateToFolderAF(folderId) {
+        var url = '{!$Page.JIP_FileManagementPage}?projectId=' + encodeURIComponent(__projectId);
+        if (folderId) {
+            url += '&folderId=' + encodeURIComponent(folderId);
+        }
+        window.location.href = url;
+    }
+
+    function navigateToRootAF() {
+        var url = '{!$Page.JIP_FileManagementPage}?projectId=' + encodeURIComponent(__projectId);
+        window.location.href = url;
+    }
+
+    function initPage() {
+        buildBreadcrumb();
+    }
+
+    function buildBreadcrumb() {
+        var area = document.getElementById('breadcrumbArea');
+        if (!area) return;
+
+        var data = [];
+        try { data = {!breadcrumbJson}; } catch(e) { data = []; }
+
+        var html = '<a href="javascript:void(0);" onclick="navigateToRootAF();">&#x1F3E0; ' + escHtml(__rootLabel) + '</a>';
+        for (var i = 0; i < data.length; i++) {
+            html += '<span class="sep">/</span>';
+            if (i === data.length - 1) {
+                html += '<span class="current">' + escHtml(data[i].name) + '</span>';
+            } else {
+                html += '<a href="javascript:void(0);" onclick="navigateToFolderAF(\'' + data[i].id + '\');">' + escHtml(data[i].name) + '</a>';
+            }
+        }
+        area.innerHTML = html;
+    }
+
+    function escHtml(s) {
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(s));
+        return d.innerHTML;
+    }
+
+    // Init on page load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPage);
+    } else {
+        initPage();
+    }
+  </script>
+</apex:page>

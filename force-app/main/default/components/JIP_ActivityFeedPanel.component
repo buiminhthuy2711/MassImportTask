@@ -1,0 +1,852 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:component controller="JIP_ActivityFeedPanelController">
+  <apex:attribute name="projectId"
+    type="String"
+    description="Project record ID"
+    required="true"
+    assignTo="{!selectedProjectId}"
+  />
+
+  <apex:actionFunction name="afpInit"
+    action="{!init}"
+    reRender="activityFeedPanel"
+    oncomplete="window._afpReady=true; afpHideLoading();"
+  />
+
+  <style>
+    /* ===== ACTIVITY SLIDE PANEL ===== */
+    .activity-panel-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.25);
+      z-index: 998;
+    }
+    .activity-panel-overlay.open {
+      display: block;
+    }
+    .activity-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 420px;
+      max-width: 90vw;
+      background: var(--white, #fff);
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.12);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .activity-panel.open {
+      transform: translateX(0);
+    }
+    .activity-panel.fullscreen {
+      width: calc(100vw - 180px);
+      max-width: calc(100vw - 180px);
+      border-radius: 0;
+    }
+    .activity-panel.fullscreen .activity-panel-body {
+      padding: 1.2rem 2rem;
+    }
+    .activity-panel.fullscreen .activity-panel-filter {
+      padding: 0.6rem 2rem;
+    }
+    .activity-panel.fullscreen .activity-card {
+      max-width: 100%;
+    }
+    @media (max-width: 800px) {
+      .activity-panel.fullscreen {
+        width: calc(100vw - 50px);
+        max-width: calc(100vw - 50px);
+      }
+    }
+    .activity-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1rem;
+      background: var(--green, #2baf6a);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .activity-panel-header-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .activity-panel-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .activity-panel-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .activity-panel-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .activity-panel-btn.close-btn {
+      font-size: 1.3rem;
+    }
+    .activity-panel-filter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border, #e0e0e0);
+      background: #fafafa;
+      flex-shrink: 0;
+    }
+    .activity-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.8rem 1rem;
+    }
+
+    /* Toggle button (fixed right edge) */
+    .activity-toggle-btn {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 997;
+      background: var(--green, #2baf6a);
+      color: #fff;
+      border: none;
+      border-radius: 8px 0 0 8px;
+      padding: 0.7rem 0.35rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      letter-spacing: 0.15em;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
+      transition:
+        background 0.15s,
+        right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .activity-toggle-btn:hover {
+      background: var(--green-dark, #239b5b);
+    }
+    .activity-toggle-btn.panel-open {
+      right: 420px;
+    }
+    .activity-toggle-btn.panel-fullscreen {
+      display: none;
+    }
+    .activity-toggle-btn .toggle-arrow {
+      font-size: 0.9rem;
+      writing-mode: horizontal-tb;
+    }
+    @media (max-width: 500px) {
+      .activity-panel {
+        width: 100vw;
+        max-width: 100vw;
+      }
+      .activity-toggle-btn.panel-open {
+        right: 100vw;
+        display: none;
+      }
+    }
+
+    /* Date group */
+    .afp-date-group-header {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text, #333);
+      padding: 0.5rem 0;
+      margin-top: 0.5rem;
+    }
+    .afp-date-group-header:first-child {
+      margin-top: 0;
+    }
+
+    /* Activity card */
+    .activity-card {
+      background: var(--white, #fff);
+      border: 1px solid var(--border, #e0e0e0);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.6rem;
+      display: flex;
+      gap: 0.8rem;
+      position: relative;
+      transition: box-shadow 0.15s;
+    }
+    .activity-card:hover {
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Avatar */
+    .activity-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar-green {
+      background: var(--green, #2baf6a);
+    }
+    .avatar-orange {
+      background: var(--orange, #e8833a);
+    }
+    .avatar-blue {
+      background: var(--blue, #5b9bd5);
+    }
+
+    /* Activity body */
+    .activity-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .activity-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      font-size: 0.88rem;
+      margin-bottom: 0.3rem;
+    }
+    .actor-name {
+      font-weight: 700;
+      color: var(--text, #333);
+    }
+    .actor-suffix {
+      color: var(--text-light, #666);
+    }
+
+    /* Type badge */
+    .type-badge {
+      display: inline-block;
+      padding: 0.1rem 0.5rem;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge-green {
+      background: var(--green, #2baf6a);
+    }
+    .badge-orange {
+      background: var(--orange, #e8833a);
+    }
+    .badge-blue {
+      background: var(--blue, #5b9bd5);
+    }
+    .badge-gray {
+      background: var(--gray, #888);
+    }
+    .action-text {
+      color: var(--text-light, #666);
+    }
+
+    /* Record link */
+    .record-link {
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+    .record-link a {
+      color: var(--green, #2baf6a);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .record-link a:hover {
+      text-decoration: underline;
+    }
+    .record-link .project-ref {
+      color: var(--text-light, #666);
+      font-weight: 400;
+      font-size: 0.82rem;
+      margin-left: 0.3rem;
+    }
+
+    /* Description */
+    .activity-description {
+      font-size: 0.82rem;
+      color: var(--text-light, #666);
+      line-height: 1.4;
+      margin-top: 0.2rem;
+      word-break: break-word;
+      overflow: hidden;
+    }
+    .activity-description img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin: 0.3rem 0;
+    }
+    .read-more-link {
+      display: block;
+      margin-top: 0.3rem;
+      font-size: 0.82rem;
+      color: var(--green, #2baf6a);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .read-more-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Meta */
+    .activity-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-shrink: 0;
+      min-width: 90px;
+    }
+    .activity-time {
+      font-size: 0.78rem;
+      color: var(--text-light, #666);
+      white-space: nowrap;
+    }
+    .activity-star {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-size: 0.82rem;
+      color: var(--text-light, #666);
+      cursor: pointer;
+    }
+    .activity-star:hover {
+      color: var(--orange, #e8833a);
+    }
+    .star-icon {
+      font-size: 0.9rem;
+    }
+    .activity-icons {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .comment-icon {
+      display: flex;
+      align-items: center;
+      gap: 0.15rem;
+      font-size: 0.82rem;
+      color: var(--text-light, #666);
+      cursor: pointer;
+    }
+    .comment-icon:hover {
+      color: var(--green, #2baf6a);
+    }
+    .comment-icon .icon {
+      font-size: 0.9rem;
+    }
+
+    /* Empty / Load more */
+    .afp-empty-feed {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light, #666);
+      font-size: 0.95rem;
+    }
+    .load-more-wrap {
+      text-align: center;
+      padding: 1rem 0 0.5rem;
+    }
+    .load-more-btn {
+      background: var(--white, #fff);
+      border: 1px solid var(--green, #2baf6a);
+      color: var(--green, #2baf6a);
+      padding: 0.45rem 1.5rem;
+      border-radius: 5px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .load-more-btn:hover {
+      background: var(--green, #2baf6a);
+      color: #fff;
+    }
+
+    /* Loading spinner */
+    .afp-loading {
+      display: none;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .afp-loading.active {
+      display: block;
+    }
+    .afp-spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border, #e0e0e0);
+      border-top-color: var(--green, #2baf6a);
+      border-radius: 50%;
+      animation: afp-spin 0.7s linear infinite;
+    }
+    @keyframes afp-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    .afp-loading-text {
+      margin-top: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-light, #666);
+    }
+
+    /* Notification badge */
+    .afp-badge {
+      display: none;
+      position: absolute;
+      top: 6px;
+      left: -8px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      background: #d9534f;
+      color: #fff;
+      border-radius: 9px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      writing-mode: horizontal-tb;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+      animation: afp-badge-pop 0.3s ease-out;
+    }
+    .afp-badge.show {
+      display: block;
+    }
+    @keyframes afp-badge-pop {
+      0% {
+        transform: scale(0);
+      }
+      60% {
+        transform: scale(1.2);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    .activity-toggle-btn.has-new {
+      animation: afp-pulse 2s ease-in-out infinite;
+    }
+    @keyframes afp-pulse {
+      0%,
+      100% {
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.12);
+      }
+      50% {
+        box-shadow: -2px 0 16px rgba(217, 83, 79, 0.5);
+      }
+    }
+  </style>
+
+  <!-- ACTIVITY TOGGLE BUTTON -->
+  <button
+    class="activity-toggle-btn"
+    id="activityToggleBtn"
+    onclick="
+      toggleActivityPanel();
+      return false;
+    "
+    title="最近の更新"
+  >
+    <span class="afp-badge" id="afpBadge"></span>
+    <span class="toggle-arrow">&#x25C0;</span>最近の更新
+  </button>
+
+  <!-- ACTIVITY SLIDE PANEL -->
+  <div
+    class="activity-panel-overlay"
+    id="activityOverlay"
+    onclick="
+      closeActivityPanel();
+      return false;
+    "
+  ></div>
+  <div class="activity-panel" id="activityPanel">
+    <div class="activity-panel-header">
+      <div class="activity-panel-header-title">&#x1F4E1; 最近の更新</div>
+      <div class="activity-panel-header-actions">
+        <button
+          class="activity-panel-btn"
+          id="activityFullscreenBtn"
+          onclick="
+            toggleFullscreen();
+            return false;
+          "
+          title="全画面表示"
+        >
+          &#x26F6;
+        </button>
+        <button
+          class="activity-panel-btn close-btn"
+          onclick="
+            closeActivityPanel();
+            return false;
+          "
+          title="閉じる"
+        >
+          &times;
+        </button>
+      </div>
+    </div>
+    <div class="activity-panel-filter">
+      <span
+        class="filter-label"
+        style="font-size: 0.85rem; color: var(--text-light, #666)"
+        >フィルタ：</span
+      >
+      <apex:selectList value="{!filterType}"
+        size="1"
+        multiselect="false"
+        styleClass="filter-select"
+      >
+        <apex:selectOptions value="{!filterOptions}" />
+        <apex:actionSupport event="onchange"
+          action="{!applyFilter}"
+          reRender="activityFeedPanel"
+          onsubmit="afpShowLoading()"
+          oncomplete="afpHideLoading(); reopenPanelAfterFilter();"
+        />
+      </apex:selectList>
+    </div>
+    <div class="afp-loading" id="afpLoading">
+      <div class="afp-spinner"></div>
+      <div class="afp-loading-text">読み込み中...</div>
+    </div>
+    <apex:outputPanel id="activityFeedPanel" layout="none">
+      <div class="activity-panel-body">
+        <apex:outputPanel rendered="{!totalCount > 0}">
+          <apex:variable var="prevDate" value="" />
+          <apex:repeat value="{!activities}" var="a">
+            <apex:outputPanel rendered="{!a.dateGroup != prevDate}">
+              <div class="afp-date-group-header">{!a.dateGroup}</div>
+            </apex:outputPanel>
+            <apex:variable var="prevDate" value="{!a.dateGroup}" />
+
+            <div class="activity-card">
+              <div class="activity-avatar {!a.avatarClass}">
+                {!a.avatarInitial}
+              </div>
+              <div class="activity-body">
+                <div class="activity-header">
+                  <span class="actor-name">{!a.actorDisplayName}</span>
+                  <span class="actor-suffix">さんが</span>
+                  <span class="type-badge {!a.badgeClass}"
+                    >{!a.record.ActivityType__c}</span
+                  >
+                  <span class="action-text">を{!a.record.Action__c}</span>
+                </div>
+                <div class="record-link">
+                  <a href="javascript:void(0);"
+                    >{!a.record.RelatedRecordName__c}</a
+                  >
+                  <span class="project-ref">&nbsp;- {!a.projectDisplay}</span>
+                </div>
+                <apex:outputPanel rendered="{!a.descriptionPreview != ''}">
+                  <div
+                    class="activity-description"
+                    id="desc-preview-{!a.record.Id}"
+                  >
+                    <apex:outputText value="{!a.descriptionPreview}"
+                      escape="true"
+                    />
+                  </div>
+                  <div
+                    class="activity-description"
+                    id="desc-full-{!a.record.Id}"
+                    style="display: none"
+                  >
+                    <apex:outputText value="{!a.record.Description__c}"
+                      escape="false"
+                    />
+                  </div>
+                  <apex:outputPanel rendered="{!a.hasMoreDescription}">
+                    <a
+                      href="javascript:void(0);"
+                      class="read-more-link"
+                      id="read-more-{!a.record.Id}"
+                      onclick="
+                        toggleDescription('{!a.record.Id}');
+                        return false;
+                      "
+                      >... もっと読む</a
+                    >
+                  </apex:outputPanel>
+                </apex:outputPanel>
+              </div>
+              <div class="activity-meta">
+                <span class="activity-time">{!a.timeAgo}</span>
+                <div class="activity-icons">
+                  <span class="comment-icon">
+                    <span class="icon">&#x1F4AC;</span>
+                  </span>
+                  <span class="activity-star">
+                    <span class="star-icon">&#x2605;</span>
+                    {!FLOOR(a.record.StarCount__c)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </apex:repeat>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!totalCount == 0}">
+          <div class="afp-empty-feed">最近の更新はありません。</div>
+        </apex:outputPanel>
+
+        <apex:outputPanel rendered="{!hasMore}">
+          <div class="load-more-wrap">
+            <apex:commandButton value="もっと読み込む ({!remainingCount}件)"
+              action="{!loadMore}"
+              reRender="activityFeedPanel"
+              onclick="afpShowLoading()"
+              oncomplete="afpHideLoading(); reopenPanelAfterFilter();"
+              styleClass="load-more-btn"
+            />
+          </div>
+        </apex:outputPanel>
+      </div>
+    </apex:outputPanel>
+  </div>
+
+  <script>
+    /* ===== Activity Panel Toggle ===== */
+    function toggleActivityPanel() {
+      var panel = document.getElementById("activityPanel");
+      if (panel.classList.contains("open")) {
+        closeActivityPanel();
+      } else {
+        openActivityPanel();
+      }
+    }
+    function afpShowLoading() {
+      var el = document.getElementById("afpLoading");
+      if (el) el.classList.add("active");
+    }
+    function afpHideLoading() {
+      var el = document.getElementById("afpLoading");
+      if (el) el.classList.remove("active");
+    }
+    function openActivityPanel() {
+      // Mark seen immediately (save to localStorage right now, don't wait for server)
+      afpMarkSeenNow();
+      afpClearBadge();
+      if (!window._afpReady) {
+        afpShowLoading();
+        afpInit();
+      } else {
+        afpShowLoading();
+        afpInit(); // reload latest activities
+      }
+      var panel = document.getElementById("activityPanel");
+      var overlay = document.getElementById("activityOverlay");
+      var btn = document.getElementById("activityToggleBtn");
+      panel.classList.add("open");
+      overlay.classList.add("open");
+      btn.classList.add("panel-open");
+      btn.querySelector(".toggle-arrow").innerHTML = "&#x25B6;";
+    }
+    function closeActivityPanel() {
+      // Update seen time on close too
+      afpMarkSeenNow();
+      var panel = document.getElementById("activityPanel");
+      var overlay = document.getElementById("activityOverlay");
+      var btn = document.getElementById("activityToggleBtn");
+      panel.classList.remove("open");
+      panel.classList.remove("fullscreen");
+      overlay.classList.remove("open");
+      btn.classList.remove("panel-open");
+      btn.classList.remove("panel-fullscreen");
+      btn.querySelector(".toggle-arrow").innerHTML = "&#x25C0;";
+      updateFullscreenBtn();
+    }
+
+    function toggleFullscreen() {
+      var panel = document.getElementById("activityPanel");
+      var btn = document.getElementById("activityToggleBtn");
+      if (panel.classList.contains("fullscreen")) {
+        panel.classList.remove("fullscreen");
+        btn.classList.remove("panel-fullscreen");
+        btn.classList.add("panel-open");
+      } else {
+        panel.classList.add("fullscreen");
+        btn.classList.add("panel-fullscreen");
+      }
+      updateFullscreenBtn();
+    }
+    function updateFullscreenBtn() {
+      var panel = document.getElementById("activityPanel");
+      var fsBtn = document.getElementById("activityFullscreenBtn");
+      if (panel.classList.contains("fullscreen")) {
+        fsBtn.innerHTML = "&#x2750;";
+        fsBtn.title = "元に戻す";
+      } else {
+        fsBtn.innerHTML = "&#x26F6;";
+        fsBtn.title = "全画面表示";
+      }
+    }
+
+    function reopenPanelAfterFilter() {
+      var panel = document.getElementById("activityPanel");
+      if (!panel.classList.contains("open")) {
+        panel.classList.add("open");
+        document.getElementById("activityOverlay").classList.add("open");
+        var btn = document.getElementById("activityToggleBtn");
+        btn.classList.add("panel-open");
+        btn.querySelector(".toggle-arrow").innerHTML = "&#x25B6;";
+      }
+    }
+
+    /* ===== localStorage for lastSeenTime ===== */
+    var AFP_STORAGE_KEY = "afp_lastSeen_{!selectedProjectId}";
+    var AFP_PROJECT_ID = "{!selectedProjectId}";
+    function afpGetStoredTime() {
+      try {
+        return localStorage.getItem(AFP_STORAGE_KEY) || "";
+      } catch (e) {
+        return "";
+      }
+    }
+    function afpSaveSeenTime(val) {
+      if (val) {
+        try {
+          localStorage.setItem(AFP_STORAGE_KEY, val);
+        } catch (e) {}
+      }
+    }
+    // Immediately save current time to localStorage (client-side, no server wait)
+    function afpMarkSeenNow() {
+      var now = new Date();
+      var ts =
+        now.getUTCFullYear() +
+        "-" +
+        String(now.getUTCMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(now.getUTCDate()).padStart(2, "0") +
+        "T" +
+        String(now.getUTCHours()).padStart(2, "0") +
+        ":" +
+        String(now.getUTCMinutes()).padStart(2, "0") +
+        ":" +
+        String(now.getUTCSeconds()).padStart(2, "0");
+      afpSaveSeenTime(ts);
+    }
+
+    /* ===== JS Remoting for poll/badge ===== */
+    function afpDoCheckNew() {
+      var storedTime = afpGetStoredTime();
+      Visualforce.remoting.Manager.invokeAction(
+        "{!$RemoteAction.JIP_ActivityFeedPanelController.checkNewRemote}",
+        AFP_PROJECT_ID,
+        storedTime,
+        function (result, event) {
+          if (event.status && result) {
+            afpSetBadge(result.newCount || 0);
+          }
+        },
+        { escape: true }
+      );
+    }
+
+    /* ===== New Activity Badge ===== */
+    function afpSetBadge(count) {
+      var badge = document.getElementById("afpBadge");
+      var btn = document.getElementById("activityToggleBtn");
+      if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : count;
+        badge.classList.add("show");
+        btn.classList.add("has-new");
+      } else {
+        afpClearBadge();
+      }
+    }
+    function afpClearBadge() {
+      var badge = document.getElementById("afpBadge");
+      var btn = document.getElementById("activityToggleBtn");
+      badge.classList.remove("show");
+      btn.classList.remove("has-new");
+    }
+
+    /* Poll for new activities every 60s (only when tab is visible & user is active) */
+    var _afpLastUserAction = Date.now();
+    document.addEventListener(
+      "mousemove",
+      function () {
+        _afpLastUserAction = Date.now();
+      },
+      { passive: true }
+    );
+    document.addEventListener(
+      "keydown",
+      function () {
+        _afpLastUserAction = Date.now();
+      },
+      { passive: true }
+    );
+
+    window._afpPollTimer = setInterval(function () {
+      // Skip if tab is hidden
+      if (document.hidden) return;
+      // Skip if user idle > 30 min
+      if (Date.now() - _afpLastUserAction > 1800000) return;
+      var panel = document.getElementById("activityPanel");
+      if (!panel || panel.classList.contains("open")) return;
+      afpDoCheckNew();
+    }, 60000);
+    /* Initial check after 3s */
+    setTimeout(function () {
+      afpDoCheckNew();
+    }, 3000);
+
+    function toggleDescription(recordId) {
+      var preview = document.getElementById("desc-preview-" + recordId);
+      var full = document.getElementById("desc-full-" + recordId);
+      var link = document.getElementById("read-more-" + recordId);
+      if (full.style.display === "none") {
+        preview.style.display = "none";
+        full.style.display = "block";
+        link.textContent = "... \u9589\u3058\u308b";
+      } else {
+        preview.style.display = "block";
+        full.style.display = "none";
+        link.textContent = "... \u3082\u3063\u3068\u8aad\u3080";
+      }
+    }
+  </script>
+</apex:component>
