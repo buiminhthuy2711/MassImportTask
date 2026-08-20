@@ -38,6 +38,9 @@ public with sharing class JIP_ProjectTaskController {
   public Integer countResolved { get; set; }
   public Integer countClosed { get; set; }
 
+  // Mass import
+  public Boolean showMassImportModal { get; set; }
+  public Boolean showMassImportPreviewModal { get; set; }
   // Language support
   public String getLanguage() {
     if (selectedProjectId == null) {
@@ -68,6 +71,7 @@ public with sharing class JIP_ProjectTaskController {
     filterMilestone = '';
     filterKeyword = '';
     showModal = false;
+    showMassImportModal = false;
     isEditMode = false;
 
     // Check URL param for projectId
@@ -387,4 +391,19 @@ public with sharing class JIP_ProjectTaskController {
   private void addError(String msg) {
     ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, msg));
   }
+
+  public void closeMassImportModal() {
+    showMassImportModal = false;
+  }
+  
+  public void openMassImportModal() {
+    showMassImportModal = true;
+  }
+  public void closeMassImportPreviewModal() {
+    showMassImportPreviewModal = false;
+  }
+  public void openMassImportPreviewModal() {
+    showMassImportPreviewModal = true;
+  }
+
 }

@@ -1106,6 +1106,12 @@ public with sharing class JIP_TranslationHelper {
       'en',
       'Compliance Check Complete'
     );
+
+    // ===== MASS IMPORT TRANSLATIONS =====
+    addTranslation('mass_import_tasks', 'ja', '一括インポートタスク');
+    addTranslation('mass_import_tasks', 'en', 'Mass Import Tasks');
+    addTranslation('preview_import', 'ja', 'プレビュー');
+    addTranslation('preview_import', 'en', 'Preview');
   }
 
   private static void addTranslation(String key, String lang, String value) {

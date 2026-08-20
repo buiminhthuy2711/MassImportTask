@@ -650,10 +650,16 @@
             </apex:selectList>
             - {!T['task_list']}
           </h1>
-          <apex:commandButton value="+ {!T['add_task']}"
-            action="{!openNewTask}"
-            styleClass="btn-action btn-action-primary"
-          />
+          <div class="action-btns">
+            <apex:commandButton value="+ {!T['mass_import_tasks']}"
+              action="{!openMassImportModal}"
+              styleClass="btn-action btn-action-primary"
+            />
+            <apex:commandButton value="+ {!T['add_task']}"
+              action="{!openNewTask}"
+              styleClass="btn-action btn-action-primary"
+            />
+          </div>
         </div>
 
         <!-- Filter Area -->
@@ -1243,6 +1249,31 @@
         </apex:outputPanel>
       </div>
     </div>
+    <!-- Mass Import Modal -->
+     <apex:outputPanel id="massImprtModal" 
+        rendered="{!showMassImportModal}"
+     >
+      <div class = "modal-overlay">
+        <div class = "modal-box">
+          <div class = "modal-header">
+            <h2>{!T['mass_import_tasks']}</h2>
+          </div>
+          <div class = "modal-body">
+          </div>
+          <div class = "modal-footer">
+            <apex:commandButton value="{!T['preview_import']}"
+              action="{!openMassImportPreviewModal}"
+              styleClass="btn-modal btn-modal-save"
+            />
+            <apex:commandButton value="{!T['close']}"
+              action="{!closeMassImportModal}"
+              reRender="mainForm"
+              styleClass="btn-modal btn-modal-cancel"
+            />
+          </div>
+        </div>
+      </div>
+     </apex:outputPanel>
   </apex:form>
 
   <script>
