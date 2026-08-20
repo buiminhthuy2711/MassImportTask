@@ -41,6 +41,9 @@ public with sharing class JIP_ProjectTaskController {
   // Mass import
   public Boolean showMassImportModal { get; set; }
   public Boolean showMassImportPreviewModal { get; set; }
+  // Mass import
+  public Boolean showMassImportModal { get; set; }
+  public Boolean showMassImportPreviewModal { get; set; }
   // Language support
   public String getLanguage() {
     if (selectedProjectId == null) {
@@ -71,6 +74,7 @@ public with sharing class JIP_ProjectTaskController {
     filterMilestone = '';
     filterKeyword = '';
     showModal = false;
+    showMassImportModal = false;
     showMassImportModal = false;
     isEditMode = false;
 
