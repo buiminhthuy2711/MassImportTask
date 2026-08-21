@@ -1,0 +1,68 @@
+.dashboard-wrap {
+    font-family: 'Salesforce Sans', 'Meiryo', 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif;
+    background: #f4f6f9;
+    min-height: 100vh;
+    padding: 1rem;
+}
+.dash-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1rem;
+}
+.dash-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.dash-title h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+.dash-selector {
+    min-width: 280px;
+}
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin: 1.2rem 0 0.6rem 0;
+    padding-left: 0.3rem;
+    border-left: 4px solid #2baf6a;
+    padding: 0.2rem 0 0.2rem 0.6rem;
+}
+.dash-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+.cols-1 { grid-template-columns: 1fr; }
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.dash-cell {
+    min-width: 0;
+}
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 4rem;
+    color: #999;
+    font-size: 1.1rem;
+}
+@media (max-width: 1000px) {
+    .cols-3 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 700px) {
+    .cols-3, .cols-2 { grid-template-columns: 1fr; }
+    .dash-header { flex-direction: column; gap: 0.5rem; }
+    .dash-selector { min-width: 100%; }
+}

@@ -1,0 +1,23 @@
+<template>
+    <lightning-card title="バグステータス分布" icon-name="utility:bug">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <div class="chart-wrapper">
+                    <canvas lwc:ref="chartCanvas"></canvas>
+                </div>
+                <div class="legend-row">
+                    <template for:each={legendItems} for:item="item">
+                        <div key={item.label} class="legend-item">
+                            <span class="legend-dot" style={item.dotStyle}></span>
+                            <span class="legend-label">{item.label}</span>
+                            <span class="legend-count">{item.count}</span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

@@ -1,0 +1,17 @@
+.chart-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+.avg-row {
+    text-align: center;
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+}

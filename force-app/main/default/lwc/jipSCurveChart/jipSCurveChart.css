@@ -1,0 +1,23 @@
+.chart-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+.info-row {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    margin-top: 0.8rem;
+    font-size: 0.85rem;
+}
+.info-planned {
+    color: #5b9bd5;
+}
+.info-actual {
+    color: #2baf6a;
+}
+.info-gap {
+    color: #d9534f;
+    font-weight: 600;
+}

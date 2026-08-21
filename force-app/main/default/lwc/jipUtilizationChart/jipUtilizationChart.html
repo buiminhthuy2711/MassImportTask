@@ -1,0 +1,35 @@
+<template>
+    <lightning-card title="稼働率" icon-name="utility:clock">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <template if:true={hasData}>
+                    <div class="chart-wrapper">
+                        <canvas lwc:ref="chartCanvas"></canvas>
+                    </div>
+                    <div class="util-table">
+                        <div class="util-header">
+                            <span class="util-col-name">メンバー</span>
+                            <span class="util-col">予定(h)</span>
+                            <span class="util-col">実績(h)</span>
+                            <span class="util-col">稼働率</span>
+                        </div>
+                        <template for:each={utilData} for:item="u">
+                            <div key={u.memberName} class="util-row">
+                                <span class="util-col-name">{u.memberName}</span>
+                                <span class="util-col">{u.estimatedHours}</span>
+                                <span class="util-col">{u.actualHours}</span>
+                                <span class={u.rateClass}>{u.utilizationRate}%</span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={hasData}>
+                    <div class="empty-state">データがありません</div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

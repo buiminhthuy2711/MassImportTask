@@ -1,0 +1,31 @@
+.chart-wrapper {
+    max-width: 280px;
+    margin: 0 auto;
+    position: relative;
+    height: 280px;
+}
+.legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+}
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.legend-label {
+    color: #666;
+}
+.legend-count {
+    font-weight: 600;
+}

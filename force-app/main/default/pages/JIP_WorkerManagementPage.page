@@ -1,0 +1,1047 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_WorkerManagementController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --danger: #e53e3e;
+      --danger-dark: #c53030;
+      --success: #38a169;
+      --success-dark: #2f855a;
+      --warning: #d69e2e;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    * {
+      box-sizing: border-box;
+    }
+
+    /* Main Layout with Sidebar */
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* Main Content Area */
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+    }
+
+    /* Page Header */
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .hr-page-header .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .hr-page-header .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+    .hr-page-header .breadcrumb a:hover {
+      text-decoration: underline;
+    }
+
+    /* Stats Cards */
+    .hr-stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      background: var(--bg);
+    }
+    .stat-card {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .stat-icon.blue {
+      background: #ebf8ff;
+      color: #3182ce;
+    }
+    .stat-icon.green {
+      background: #f0fff4;
+      color: #38a169;
+    }
+    .stat-icon.orange {
+      background: #fffaf0;
+      color: #dd6b20;
+    }
+    .stat-icon.purple {
+      background: #faf5ff;
+      color: #805ad5;
+    }
+    .stat-info .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+    .stat-info .stat-label {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-top: 0.2rem;
+    }
+
+    /* Filter Area */
+    .hr-filter-area {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+    }
+    .hr-filter-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .hr-filter-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .hr-filter-item label {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      font-weight: 600;
+    }
+    .hr-filter-item select,
+    .hr-filter-item input {
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      min-width: 140px;
+    }
+    .hr-filter-item input[type="text"] {
+      min-width: 200px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.45rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--white);
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    .btn-secondary {
+      background: #edf2f7;
+      color: var(--text);
+    }
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: var(--white);
+    }
+    .btn-danger:hover {
+      background: var(--danger-dark);
+    }
+    .btn-success {
+      background: var(--success);
+      color: var(--white);
+    }
+    .btn-success:hover {
+      background: var(--success-dark);
+    }
+    .btn-sm {
+      padding: 0.3rem 0.7rem;
+      font-size: 0.8rem;
+    }
+
+    /* Info Bar */
+    .hr-info-bar {
+      padding: 0.6rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      background: var(--bg);
+    }
+    .hr-info-bar .count-badge {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-left: 0.3rem;
+    }
+    .hr-action-btns {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Table */
+    .hr-table-wrap {
+      padding: 0 1.5rem 1.5rem;
+      overflow-x: auto;
+    }
+    .hr-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.82rem;
+    }
+    .hr-table thead th {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      font-size: 0.78rem;
+    }
+    .hr-table tbody td {
+      padding: 0.5rem 0.65rem;
+      border-bottom: 1px solid #f0f0f0;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .hr-table tbody tr:hover {
+      background: #f8fafc;
+    }
+    .hr-table tbody tr.clickable-row {
+      cursor: pointer;
+    }
+    .hr-table tbody tr.clickable-row:hover {
+      background: #eef2ff;
+    }
+    .hr-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .hr-table .actions {
+      display: flex;
+      gap: 0.3rem;
+    }
+    .hr-empty {
+      text-align: center;
+      color: #a0aec0;
+      padding: 3rem 0;
+      font-size: 0.95rem;
+    }
+
+    /* Status badges */
+    .badge {
+      padding: 0.18rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .badge-active {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .badge-leave {
+      background: #fefcbf;
+      color: #744210;
+    }
+    .badge-resigned {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    /* Employee Avatar */
+    .emp-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4299e1, #3182ce);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-right: 0.5rem;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .emp-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .emp-avatar-fallback {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    .emp-avatar-fallback.is-hidden {
+      display: none;
+    }
+    .emp-name-cell {
+      display: flex;
+      align-items: center;
+    }
+    .emp-name-info .emp-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .emp-name-info .emp-code {
+      font-size: 0.72rem;
+      color: var(--text-light);
+    }
+
+    /* Modal */
+    .jipa-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9000;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 2vh;
+      overflow-y: auto;
+    }
+    .jipa-modal {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      width: 760px;
+      max-width: 95vw;
+      margin-bottom: 2vh;
+      animation: fadeInModal 0.2s;
+    }
+    @keyframes fadeInModal {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .jipa-modal-header {
+      background: linear-gradient(135deg, #2c5282, #1a365d);
+      color: var(--white);
+      padding: 1rem 1.5rem;
+      border-radius: 10px 10px 0 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .jipa-modal-body {
+      padding: 1.2rem 1.5rem 0.5rem;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .section-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--primary);
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 0.35rem;
+      margin: 1.2rem 0 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .section-title:first-child {
+      margin-top: 0;
+    }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 0;
+    }
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+      color: var(--text);
+      font-size: 0.82rem;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group input[type="date"],
+    .form-group input[type="number"],
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.88rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .required-mark {
+      color: var(--danger);
+    }
+    .jipa-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 0 0 10px 10px;
+    }
+    .hr-messages {
+      padding: 0 1.5rem;
+    }
+
+    @media (max-width: 1100px) {
+      .hr-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 800px) {
+      .hr-stats-row {
+        grid-template-columns: 1fr;
+      }
+      .form-row {
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+    }
+  </style>
+
+  <script>
+    function navigateToWorkerDetails(workerId) {
+      if (workerId) {
+        window.location.href = "/apex/JIP_WorkerDetailsPage?id=" + workerId;
+      }
+    }
+
+    function navigateToNewWorker() {
+      window.location.href = "/apex/JIP_WorkerDetailsPage?id=new";
+    }
+
+    function handleAvatarError(imgEl) {
+      if (!imgEl) {
+        return;
+      }
+      imgEl.style.display = "none";
+      var fallbackEl = imgEl.nextElementSibling;
+      if (fallbackEl) {
+        fallbackEl.classList.remove("is-hidden");
+      }
+    }
+  </script>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <!-- Sidebar -->
+      <c:JIP_HRSidebar activePage="employee" />
+
+      <!-- Main Content -->
+      <div class="hr-main-content">
+        <!-- Page Header -->
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">社員管理システム</a> /
+              基本情報管理
+            </div>
+            <h1>👤 社員マスタ（基本情報管理）</h1>
+          </div>
+          <apex:commandButton value="➕ 新規登録"
+            onclick="
+              navigateToNewWorker();
+              return false;
+            "
+            styleClass="btn btn-success"
+          />
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="hr-stats-row">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div class="stat-info">
+              <div class="stat-value">{!totalCount}</div>
+              <div class="stat-label">全社員数</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+              <div class="stat-value">{!activeCount}</div>
+              <div class="stat-label">在職中</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">💤</div>
+            <div class="stat-info">
+              <div class="stat-value">{!leaveCount}</div>
+              <div class="stat-label">休職中</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📅</div>
+            <div class="stat-info">
+              <div class="stat-value">{!newHireCount}</div>
+              <div class="stat-label">今月入社</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Area -->
+        <div class="hr-filter-area">
+          <div class="hr-filter-row">
+            <div class="hr-filter-item">
+              <label>キーワード</label>
+              <apex:inputText value="{!searchKeyword}"
+                html-placeholder="名前・コード・部署で検索..."
+              />
+            </div>
+            <div class="hr-filter-item">
+              <label>ステータス</label>
+              <apex:selectList value="{!filterStatus}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOption itemValue="" itemLabel="すべて" />
+                <apex:selectOption itemValue="在職" itemLabel="在職" />
+                <apex:selectOption itemValue="休職中" itemLabel="休職中" />
+                <apex:selectOption itemValue="退職済" itemLabel="退職済" />
+              </apex:selectList>
+            </div>
+            <div class="hr-filter-item">
+              <label>雇用形態</label>
+              <apex:selectList value="{!filterContractType}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOption itemValue="" itemLabel="すべて" />
+                <apex:selectOption itemValue="正社員" itemLabel="正社員" />
+                <apex:selectOption itemValue="契約社員" itemLabel="契約社員" />
+                <apex:selectOption itemValue="派遣社員" itemLabel="派遣社員" />
+                <apex:selectOption itemValue="パート" itemLabel="パート" />
+                <apex:selectOption itemValue="アルバイト"
+                  itemLabel="アルバイト"
+                />
+                <apex:selectOption itemValue="業務委託" itemLabel="業務委託" />
+              </apex:selectList>
+            </div>
+            <div class="hr-filter-item">
+              <label>部署</label>
+              <apex:selectList value="{!filterDepartment}"
+                size="1"
+                multiselect="false"
+              >
+                <apex:selectOptions value="{!departmentOptions}" />
+              </apex:selectList>
+            </div>
+            <apex:commandButton value="🔍 検索"
+              action="{!searchWorkers}"
+              reRender="mainForm"
+              styleClass="btn btn-primary"
+              style="align-self: flex-end"
+            />
+            <apex:commandButton value="クリア"
+              action="{!clearSearch}"
+              reRender="mainForm"
+              styleClass="btn btn-secondary"
+              style="align-self: flex-end"
+            />
+          </div>
+        </div>
+
+        <!-- Info Bar -->
+        <div class="hr-info-bar">
+          <span>
+            検索結果: <strong>{!workers.size}</strong> 件
+            <span class="count-badge">{!workers.size}</span>
+          </span>
+          <div class="hr-action-btns">
+            <apex:commandButton value="📄 CSV出力"
+              action="{!exportCSV}"
+              styleClass="btn btn-secondary btn-sm"
+            />
+            <apex:commandButton value="➕ 新規登録"
+              onclick="
+                navigateToNewWorker();
+                return false;
+              "
+              styleClass="btn btn-success btn-sm"
+            />
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="hr-messages">
+          <apex:messages id="pageMessages" layout="list" />
+        </div>
+
+        <!-- Data Table -->
+        <div class="hr-table-wrap">
+          <apex:outputPanel rendered="{!workers.size > 0}">
+            <table class="hr-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px">#</th>
+                  <th style="width: 180px">社員名</th>
+                  <th>部署</th>
+                  <th>役職</th>
+                  <th>雇用形態</th>
+                  <th style="width: 80px">ステータス</th>
+                  <th>入社日</th>
+                  <th>メール</th>
+                  <th style="width: 140px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <apex:variable var="rowNum" value="{!0}" />
+                <apex:repeat value="{!workers}" var="w">
+                  <apex:variable var="rowNum" value="{!rowNum + 1}" />
+                  <tr
+                    class="clickable-row"
+                    onclick="navigateToWorkerDetails('{!w.Id}')"
+                    title="クリックして詳細を表示"
+                  >
+                    <td>{!rowNum}</td>
+                    <td>
+                      <div class="emp-name-cell">
+                        <span class="emp-avatar">
+                          <apex:outputPanel rendered="{!NOT(ISBLANK(avatarUrlsByWorkerId[w.Id]))}"
+                          >
+                            <img
+                              src="{!avatarUrlsByWorkerId[w.Id]}"
+                              alt="avatar"
+                              onerror="handleAvatarError(this)"
+                            />
+                            <span class="emp-avatar-fallback is-hidden"
+                              >{!LEFT(w.LastName__c, 1)}</span
+                            >
+                          </apex:outputPanel>
+                          <apex:outputPanel rendered="{!ISBLANK(avatarUrlsByWorkerId[w.Id])}"
+                          >
+                            <span class="emp-avatar-fallback"
+                              >{!LEFT(w.LastName__c, 1)}</span
+                            >
+                          </apex:outputPanel>
+                        </span>
+                        <div class="emp-name-info">
+                          <div class="emp-name">
+                            {!w.LastName__c} {!w.FirstName__c}
+                          </div>
+                          <div class="emp-code">{!w.Worker_Code__c}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{!w.Department__r.Name}</td>
+                    <td>{!w.Position__c}</td>
+                    <td>{!w.ContractType__c}</td>
+                    <td>
+                      <apex:outputPanel rendered="{!w.EmploymentStatus__c == '在職'}"
+                      >
+                        <span class="badge badge-active">在職</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!w.EmploymentStatus__c == '休職中'}"
+                      >
+                        <span class="badge badge-leave">休職中</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!w.EmploymentStatus__c == '退職済'}"
+                      >
+                        <span class="badge badge-resigned">退職済</span>
+                      </apex:outputPanel>
+                      <apex:outputPanel rendered="{!w.EmploymentStatus__c == null || w.EmploymentStatus__c == ''}"
+                      >
+                        <span class="badge">—</span>
+                      </apex:outputPanel>
+                    </td>
+                    <td>
+                      <apex:outputText value="{0,date,yyyy/MM/dd}">
+                        <apex:param value="{!w.HireDate__c}" />
+                      </apex:outputText>
+                    </td>
+                    <td>{!w.Email__c}</td>
+                    <td class="actions" onclick="event.stopPropagation()">
+                      <apex:commandButton value="✏️"
+                        action="{!openEditModal}"
+                        reRender="mainForm"
+                        styleClass="btn btn-primary btn-sm"
+                        title="編集"
+                      >
+                        <apex:param name="editId"
+                          value="{!w.Id}"
+                          assignTo="{!currentWorker}"
+                        />
+                      </apex:commandButton>
+                      <apex:commandButton value="🗑️"
+                        action="{!deleteWorker}"
+                        reRender="mainForm"
+                        styleClass="btn btn-danger btn-sm"
+                        onclick="
+                          if (
+                            !confirm('この社員を削除してもよろしいですか？')
+                          ) {
+                            return false;
+                          }
+                        "
+                        title="削除"
+                      >
+                        <apex:param name="deleteId"
+                          value="{!w.Id}"
+                          assignTo="{!deleteWorkerId}"
+                        />
+                      </apex:commandButton>
+                    </td>
+                  </tr>
+                </apex:repeat>
+              </tbody>
+            </table>
+          </apex:outputPanel>
+
+          <apex:outputPanel rendered="{!workers.size == 0}">
+            <div class="hr-empty">
+              &#128203;
+              社員データがありません。「新規登録」ボタンから社員を追加してください。
+            </div>
+          </apex:outputPanel>
+        </div>
+      </div>
+      <!-- End hr-main-content -->
+
+      <!-- Modal: New / Edit -->
+      <apex:outputPanel rendered="{!showModal}">
+        <div class="jipa-modal-overlay">
+          <div class="jipa-modal">
+            <div class="jipa-modal-header">
+              <apex:outputPanel rendered="{!!isEditMode}"
+                >➕ 新規社員登録</apex:outputPanel>
+              <apex:outputPanel rendered="{!isEditMode}"
+                >✏️ 社員情報編集</apex:outputPanel>
+            </div>
+            <div class="jipa-modal-body">
+              <!-- Section: 基本情報 -->
+              <div class="section-title">📋 基本情報</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>社員コード <span class="required-mark">*</span></label>
+                  <apex:inputText value="{!currentWorker.Worker_Code__c}"
+                    html-placeholder="例: WK-001"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>勤務ステータス</label>
+                  <apex:inputField value="{!currentWorker.EmploymentStatus__c}"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>姓 (Last Name)</label>
+                  <apex:inputText value="{!currentWorker.LastName__c}"
+                    html-placeholder="例: 山田"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>名 (First Name)</label>
+                  <apex:inputText value="{!currentWorker.FirstName__c}"
+                    html-placeholder="例: 太郎"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>セイ (カナ)</label>
+                  <apex:inputText value="{!currentWorker.LastNameKana__c}"
+                    html-placeholder="例: ヤマダ"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>メイ (カナ)</label>
+                  <apex:inputText value="{!currentWorker.FirstNameKana__c}"
+                    html-placeholder="例: タロウ"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>性別</label>
+                  <apex:inputField value="{!currentWorker.Gender__c}" />
+                </div>
+                <div class="form-group">
+                  <label>生年月日</label>
+                  <apex:inputField value="{!currentWorker.BirthDate__c}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>血液型</label>
+                  <apex:inputField value="{!currentWorker.BloodType__c}" />
+                </div>
+                <div class="form-group">
+                  <label>国籍</label>
+                  <apex:inputText value="{!currentWorker.Nationality__c}"
+                    html-placeholder="例: 日本"
+                  />
+                </div>
+              </div>
+
+              <!-- Section: 連絡先 -->
+              <div class="section-title">📞 連絡先情報</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>メールアドレス</label>
+                  <apex:inputField value="{!currentWorker.Email__c}" />
+                </div>
+                <div class="form-group">
+                  <label>電話番号</label>
+                  <apex:inputField value="{!currentWorker.Phone__c}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group" style="flex: 0 0 140px">
+                  <label>郵便番号</label>
+                  <apex:inputText value="{!currentWorker.PostalCode__c}"
+                    html-placeholder="例: 100-0001"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>住所</label>
+                  <apex:inputText value="{!currentWorker.Address__c}"
+                    html-placeholder="例: 東京都千代田区..."
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>最寄駅</label>
+                  <apex:inputText value="{!currentWorker.NearestStation__c}"
+                    html-placeholder="例: JR東京駅"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>通勤手当 (月額)</label>
+                  <apex:inputField value="{!currentWorker.CommutingAllowance__c}"
+                  />
+                </div>
+              </div>
+
+              <!-- Section: 勤務情報 -->
+              <div class="section-title">💼 勤務情報</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>部署</label>
+                  <apex:inputField value="{!currentWorker.Department__c}" />
+                </div>
+                <div class="form-group">
+                  <label>役職</label>
+                  <apex:inputField value="{!currentWorker.Position__c}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>雇用形態</label>
+                  <apex:inputField value="{!currentWorker.ContractType__c}" />
+                </div>
+                <div class="form-group">
+                  <label>給与 (月額)</label>
+                  <apex:inputField value="{!currentWorker.Salary__c}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>入社日</label>
+                  <apex:inputField value="{!currentWorker.HireDate__c}" />
+                </div>
+                <div class="form-group">
+                  <label>退職日</label>
+                  <apex:inputField value="{!currentWorker.EndDate__c}" />
+                </div>
+              </div>
+
+              <!-- Section: 緊急連絡先 -->
+              <div class="section-title">🆘 緊急連絡先</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>緊急連絡先 (氏名)</label>
+                  <apex:inputText value="{!currentWorker.EmergencyContactName__c}"
+                    html-placeholder="例: 山田花子"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>緊急連絡先 (電話)</label>
+                  <apex:inputField value="{!currentWorker.EmergencyContactPhone__c}"
+                  />
+                </div>
+              </div>
+
+              <!-- Section: 社会保険・マイナンバー -->
+              <div class="section-title">💳 社会保険・番号情報</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>健康保険番号</label>
+                  <apex:inputText value="{!currentWorker.InsuranceNumber__c}" />
+                </div>
+                <div class="form-group">
+                  <label>年金番号</label>
+                  <apex:inputText value="{!currentWorker.PensionNumber__c}" />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>マイナンバー</label>
+                  <apex:inputText value="{!currentWorker.MyNumber__c}"
+                    html-placeholder="12桁"
+                  />
+                </div>
+                <div class="form-group"></div>
+              </div>
+
+              <!-- Section: 銀行口座情報 -->
+              <div class="section-title">🏦 銀行口座情報</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>銀行名</label>
+                  <apex:inputText value="{!currentWorker.BankName__c}"
+                    html-placeholder="例: みずほ銀行"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>支店名</label>
+                  <apex:inputText value="{!currentWorker.BankBranch__c}"
+                    html-placeholder="例: 東京中央支店"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>口座種別</label>
+                  <apex:inputField value="{!currentWorker.BankAccountType__c}"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>口座番号</label>
+                  <apex:inputText value="{!currentWorker.BankAccountNumber__c}"
+                  />
+                </div>
+              </div>
+
+              <!-- Section: 備考 -->
+              <div class="section-title">📝 備考</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <apex:inputField value="{!currentWorker.Notes__c}"
+                    style="width: 100%; min-height: 70px"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="jipa-modal-footer">
+              <apex:commandButton value="キャンセル"
+                action="{!closeModal}"
+                reRender="mainForm"
+                styleClass="btn btn-secondary"
+              />
+              <apex:commandButton value="&#128190; 保存"
+                action="{!saveWorker}"
+                reRender="mainForm"
+                styleClass="btn btn-primary"
+              />
+            </div>
+          </div>
+        </div>
+      </apex:outputPanel>
+    </div>
+    <!-- End hr-wrap -->
+  </apex:form>
+</apex:page>

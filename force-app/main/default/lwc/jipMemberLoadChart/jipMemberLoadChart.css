@@ -1,0 +1,11 @@
+.chart-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+}

@@ -1,0 +1,106 @@
+<template>
+    <div class="dashboard-wrap">
+        <!-- Header -->
+        <div class="dash-header">
+            <div class="dash-title">
+                <lightning-icon icon-name="utility:analytics" size="small"></lightning-icon>
+                <h1>プロジェクトダッシュボード</h1>
+            </div>
+            <div class="dash-selector">
+                <lightning-combobox
+                    label="プロジェクト"
+                    value={selectedProjectId}
+                    options={projectOptions}
+                    onchange={handleProjectChange}
+                    variant="label-hidden"
+                    placeholder="プロジェクトを選択"
+                ></lightning-combobox>
+            </div>
+        </div>
+
+        <template if:true={selectedProjectId}>
+            <!-- Section 1: Basic KPIs -->
+            <div class="section-title">① 進捗把握（基本KPI）</div>
+            <div class="dash-grid cols-3">
+                <div class="dash-cell">
+                    <c-jip-progress-rate record-id={selectedProjectId}></c-jip-progress-rate>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-task-status-chart record-id={selectedProjectId}></c-jip-task-status-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-overdue-chart record-id={selectedProjectId}></c-jip-overdue-chart>
+                </div>
+            </div>
+
+            <!-- Gantt full width -->
+            <!-- <div class="dash-grid cols-1">
+                <div class="dash-cell">
+                    <c-jip-gantt-chart record-id={selectedProjectId}></c-jip-gantt-chart>
+                </div>
+            </div> -->
+
+            <!-- Section 2: Speed & Productivity -->
+            <div class="section-title">② スピード・生産性</div>
+            <div class="dash-grid cols-3">
+                <div class="dash-cell">
+                    <c-jip-burndown-chart record-id={selectedProjectId}></c-jip-burndown-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-velocity-chart record-id={selectedProjectId}></c-jip-velocity-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-completion-trend record-id={selectedProjectId}></c-jip-completion-trend>
+                </div>
+            </div>
+
+            <!-- Section 3: Quality -->
+            <div class="section-title">③ 品質管理</div>
+            <div class="dash-grid cols-2">
+                <div class="dash-cell">
+                    <c-jip-bug-trend-chart record-id={selectedProjectId}></c-jip-bug-trend-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-bug-status-chart record-id={selectedProjectId}></c-jip-bug-status-chart>
+                </div>
+            </div>
+
+            <!-- Section 4: Risk & Delay -->
+            <div class="section-title">④ リスク・遅延管理</div>
+            <div class="dash-grid cols-1">
+                <div class="dash-cell">
+                    <c-jip-critical-path-chart record-id={selectedProjectId}></c-jip-critical-path-chart>
+                </div>
+            </div>
+
+            <!-- Section 5: Resource Management -->
+            <div class="section-title">⑤ リソース管理</div>
+            <div class="dash-grid cols-2">
+                <div class="dash-cell">
+                    <c-jip-member-load-chart record-id={selectedProjectId}></c-jip-member-load-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-utilization-chart record-id={selectedProjectId}></c-jip-utilization-chart>
+                </div>
+            </div>
+
+            <!-- Section 6: Executive -->
+            <div class="section-title">⑥ 経営・顧客向け</div>
+            <div class="dash-grid cols-2">
+                <div class="dash-cell">
+                    <c-jip-budget-chart record-id={selectedProjectId}></c-jip-budget-chart>
+                </div>
+                <div class="dash-cell">
+                    <c-jip-s-curve-chart record-id={selectedProjectId}></c-jip-s-curve-chart>
+                </div>
+            </div>
+        </template>
+
+        <template if:false={selectedProjectId}>
+            <div class="empty-state">
+                <lightning-icon icon-name="utility:info" size="large"></lightning-icon>
+                <p>プロジェクトを選択してください</p>
+            </div>
+        </template>
+    </div>
+</template>

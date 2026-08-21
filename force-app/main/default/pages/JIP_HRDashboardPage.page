@@ -1,0 +1,652 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRDashboardController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --purple: #805ad5;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Content */
+    .dashboard-content {
+      padding: 1.5rem;
+    }
+
+    /* KPI Summary Cards */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-card {
+      background: var(--white);
+      padding: 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+    }
+    .kpi-label {
+      font-size: 0.82rem;
+      color: var(--text-light);
+    }
+    .kpi-trend {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+    }
+    .trend-up {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .trend-down {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .trend-flat {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--text-light);
+      margin-top: 0.3rem;
+    }
+
+    /* Chart Cards */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .chart-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+    }
+    .chart-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .chart-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+    .chart-body {
+      padding: 1.2rem;
+    }
+
+    /* Bar Chart Placeholder */
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.8rem;
+      height: 200px;
+      padding-top: 1rem;
+    }
+    .bar-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .bar-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s;
+    }
+    .bar-label {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      margin-top: 0.5rem;
+    }
+
+    /* Pie Chart Placeholder */
+    .pie-chart {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+    .pie-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #4299e1 0deg 144deg,
+        #38a169 144deg 234deg,
+        #d69e2e 234deg 288deg,
+        #e53e3e 288deg 324deg,
+        #805ad5 324deg 360deg
+      );
+      position: relative;
+    }
+    .pie-circle::before {
+      content: "";
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .pie-legend {
+      flex: 1;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    /* Data Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .data-table th,
+    .data-table td {
+      padding: 0.7rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .data-table th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .data-table tr:hover {
+      background: #f8fafc;
+    }
+
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    /* Progress Bar */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #edf2f7;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    /* Date Filter */
+    .date-filter {
+      display: flex;
+      gap: 0.3rem;
+      background: #f7fafc;
+      padding: 0.3rem;
+      border-radius: 6px;
+    }
+    .date-btn {
+      padding: 0.4rem 0.8rem;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .date-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="dashboard" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['report_analysis']}
+            </div>
+            <h1>&#128202; {!T['report_analysis']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+            />
+            <apex:selectList value="{!filterPeriod}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="applyFiltersAction()"
+            >
+              <apex:selectOptions value="{!periodOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="applyFiltersAction"
+              action="{!applyFilters}"
+              rerender="mainForm"
+            />
+            <apex:commandButton value="&#128196; {!T['export_report']}"
+              action="{!exportReport}"
+              styleClass="btn btn-outline"
+              rerender="mainForm"
+            />
+            <apex:commandButton value="&#128260; {!T['refresh']}"
+              action="{!applyFilters}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+            />
+          </div>
+        </div>
+
+        <div class="dashboard-content">
+          <!-- KPI Summary -->
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">&#128101; 総従業員数</span>
+                <span class="kpi-trend trend-up">+3.2%</span>
+              </div>
+              <div class="kpi-value">1,248</div>
+              <div class="kpi-sub">前月比 +38名</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">&#128587; 離職率</span>
+                <span class="kpi-trend trend-down">-1.2%</span>
+              </div>
+              <div class="kpi-value" style="color: var(--success)">2.8%</div>
+              <div class="kpi-sub">業界平均: 4.5%</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">&#9200; 平均残業時間</span>
+                <span class="kpi-trend trend-flat">±0</span>
+              </div>
+              <div class="kpi-value">18.5h</div>
+              <div class="kpi-sub">目標: 20時間以内</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">&#127919; 有給消化率</span>
+                <span class="kpi-trend trend-up">+5.8%</span>
+              </div>
+              <div class="kpi-value" style="color: var(--primary)">72.4%</div>
+              <div class="kpi-sub">目標: 80%</div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="chart-grid">
+            <!-- Headcount Trend -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>&#128200; 従業員数推移</h3>
+                <span style="font-size: 0.78rem; color: var(--text-light)"
+                  >過去12ヶ月</span
+                >
+              </div>
+              <div class="chart-body">
+                <div class="bar-chart">
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 120px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">4月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 125px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">5月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 130px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">6月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 128px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">7月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 135px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">8月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 140px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">9月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 145px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">10月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 150px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">11月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 155px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">12月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 160px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">1月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 165px; background: var(--primary)"
+                    ></div>
+                    <span class="bar-label">2月</span>
+                  </div>
+                  <div class="bar-group">
+                    <div
+                      class="bar"
+                      style="height: 170px; background: var(--primary-light)"
+                    ></div>
+                    <span class="bar-label">3月</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Department Distribution -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>&#127968; 部門別人員構成</h3>
+              </div>
+              <div class="chart-body">
+                <div class="pie-chart">
+                  <div class="pie-circle"></div>
+                  <div class="pie-legend">
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background: #4299e1"></div>
+                      <span>開発部 (40%)</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background: #38a169"></div>
+                      <span>営業部 (25%)</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background: #d69e2e"></div>
+                      <span>管理部 (15%)</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background: #e53e3e"></div>
+                      <span>人事部 (10%)</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-dot" style="background: #805ad5"></div>
+                      <span>その他 (10%)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detailed Reports -->
+          <div class="chart-grid">
+            <!-- Overtime Ranking -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>&#128337; 部門別残業時間</h3>
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  style="font-size: 0.78rem; padding: 0.3rem 0.6rem"
+                >
+                  詳細
+                </button>
+              </div>
+              <div class="chart-body" style="padding: 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>部門</th>
+                      <th>平均残業</th>
+                      <th>状況</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>開発部</td>
+                      <td><strong>24.5h</strong></td>
+                      <td>
+                        <div class="progress-bar">
+                          <div
+                            class="progress-fill"
+                            style="width: 82%; background: var(--danger)"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>営業部</td>
+                      <td><strong>18.2h</strong></td>
+                      <td>
+                        <div class="progress-bar">
+                          <div
+                            class="progress-fill"
+                            style="width: 61%; background: var(--warning)"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>管理部</td>
+                      <td><strong>12.8h</strong></td>
+                      <td>
+                        <div class="progress-bar">
+                          <div
+                            class="progress-fill"
+                            style="width: 43%; background: var(--success)"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>人事部</td>
+                      <td><strong>15.5h</strong></td>
+                      <td>
+                        <div class="progress-bar">
+                          <div
+                            class="progress-fill"
+                            style="width: 52%; background: var(--success)"
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Attendance Summary -->
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>&#128197; 今月の勤怠サマリー</h3>
+                <button
+                  type="button"
+                  class="btn btn-outline"
+                  style="font-size: 0.78rem; padding: 0.3rem 0.6rem"
+                >
+                  詳細
+                </button>
+              </div>
+              <div class="chart-body" style="padding: 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>項目</th>
+                      <th>件数</th>
+                      <th>前月比</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>&#9989; 正常出勤</td>
+                      <td><strong>28,450</strong></td>
+                      <td style="color: var(--success)">+2.1%</td>
+                    </tr>
+                    <tr>
+                      <td>&#9200; 遅刻</td>
+                      <td><strong>142</strong></td>
+                      <td style="color: var(--danger)">+8.5%</td>
+                    </tr>
+                    <tr>
+                      <td>&#128683; 早退</td>
+                      <td><strong>86</strong></td>
+                      <td style="color: var(--success)">-3.4%</td>
+                    </tr>
+                    <tr>
+                      <td>&#127796; 有給取得</td>
+                      <td><strong>324</strong></td>
+                      <td style="color: var(--success)">+12.5%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

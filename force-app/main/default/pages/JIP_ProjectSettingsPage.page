@@ -1,0 +1,893 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_ProjectSettingsController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --green: #2baf6a;
+      --green-dark: #239b5b;
+      --green-darker: #1a7a47;
+      --green-light: #e6f7ee;
+      --orange: #e8833a;
+      --red: #d9534f;
+      --blue: #5b9bd5;
+      --gray: #888;
+      --bg: #f5f5f5;
+      --white: #ffffff;
+      --text: #333;
+      --text-light: #666;
+      --border: #e0e0e0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .ps-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family:
+        "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+        sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* ===== MAIN AREA ===== */
+    .main-area {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    /* Header */
+    .ps-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.7rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ps-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .ps-header-left .back-arrow {
+      color: var(--green);
+      text-decoration: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .ps-header-left .back-arrow:hover {
+      color: var(--green-dark);
+    }
+    .ps-header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .ps-header-title .icon {
+      font-size: 1.1rem;
+      color: var(--text-light);
+    }
+    .ps-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .search-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-light);
+    }
+    .search-icon:hover {
+      background: #f0f0f0;
+    }
+
+    /* Content layout: settings nav + main content */
+    .ps-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Settings nav panel */
+    .settings-nav {
+      width: 220px;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .settings-nav-header {
+      padding: 0.8rem 1rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-nav-header .gear-icon {
+      font-size: 1rem;
+      color: var(--text-light);
+    }
+    .settings-nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .settings-nav-list li a {
+      display: block;
+      padding: 0.55rem 1rem 0.55rem 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-light);
+      text-decoration: none;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .settings-nav-list li a:hover {
+      background: #f8f8f8;
+      color: var(--text);
+    }
+    .settings-nav-list li.active a {
+      color: var(--text);
+      font-weight: 600;
+      background: #f0f0f0;
+      border-left: 3px solid var(--green);
+      padding-left: calc(1.5rem - 3px);
+    }
+
+    /* Main settings content */
+    .settings-main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      min-width: 0;
+    }
+
+    /* Section title */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 1.2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .section-title .help-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-light);
+      cursor: help;
+    }
+
+    /* Add user area */
+    .add-user-box {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .add-user-select {
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.88rem;
+      margin-bottom: 0.5rem;
+    }
+    .add-user-message-toggle {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      cursor: pointer;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+    .add-user-message-toggle:hover {
+      color: var(--text);
+    }
+    .add-user-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .btn-add-project {
+      padding: 0.4rem 1rem;
+      background: #f0f0f0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: var(--text-light);
+      cursor: pointer;
+    }
+    .btn-add-project:hover {
+      background: #e8e8e8;
+    }
+    .btn-add-project.active {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+      cursor: pointer;
+    }
+    .btn-add-project.active:hover {
+      background: var(--green-dark);
+    }
+    .link-new-user {
+      font-size: 0.82rem;
+      color: var(--green);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .link-new-user:hover {
+      text-decoration: underline;
+    }
+
+    /* Admin settings button */
+    .btn-admin-settings {
+      padding: 0.4rem 1rem;
+      border: 1px solid var(--green);
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--green);
+      font-size: 0.85rem;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+    }
+    .btn-admin-settings:hover {
+      background: var(--green-light);
+    }
+
+    /* Sub-section headers */
+    .sub-header {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 1rem 0 0.8rem 0;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .filter-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.35rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .filter-select {
+      padding: 0.35rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      background: var(--white);
+    }
+
+    /* Pagination */
+    .pagination-info {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* Member table */
+    .member-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .member-table th {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+    .member-table td {
+      padding: 0.6rem 0.8rem;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.85rem;
+      vertical-align: middle;
+    }
+    .member-table tr:last-child td {
+      border-bottom: none;
+    }
+    .member-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .member-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .avatar-orange {
+      background: var(--orange);
+    }
+    .avatar-green {
+      background: var(--green);
+    }
+    .avatar-blue {
+      background: var(--blue);
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0.2rem;
+    }
+    .delete-btn:hover {
+      color: var(--red);
+    }
+    .edit-btn {
+      background: none;
+      border: none;
+      font-size: 0.9rem;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0.2rem;
+    }
+    .edit-btn:hover {
+      color: var(--blue);
+    }
+    .edit-role-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .edit-role-select {
+      padding: 0.25rem 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      background: var(--white);
+    }
+    .btn-save-role {
+      padding: 0.2rem 0.5rem;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .btn-save-role:hover {
+      background: var(--green-dark);
+    }
+    .btn-cancel-role {
+      padding: 0.2rem 0.5rem;
+      background: #f0f0f0;
+      color: var(--text-light);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .btn-cancel-role:hover {
+      background: #e8e8e8;
+    }
+    .add-user-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .add-user-row .add-user-select {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    .add-role-select {
+      width: 140px;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.88rem;
+    }
+
+    /* Right align */
+    .text-right {
+      text-align: right;
+    }
+    .float-right {
+      float: right;
+    }
+
+    /* Messages */
+    .ps-messages {
+      margin-bottom: 0.8rem;
+    }
+
+    /* Placeholder content */
+    .placeholder-content {
+      padding: 3rem;
+      text-align: center;
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 900px) {
+      .settings-nav {
+        width: 180px;
+      }
+    }
+    @media (max-width: 700px) {
+      .ps-content {
+        flex-direction: column;
+      }
+      .settings-nav {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <apex:actionFunction name="removeMemberAF"
+      action="{!removeMember}"
+      reRender="mainForm"
+    >
+      <apex:param name="rmId" value="" assignTo="{!removeMemberId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="setAdminAF"
+      action="{!setAdminRole}"
+      reRender="mainForm"
+    >
+      <apex:param name="adminId" value="" assignTo="{!adminUserId}" />
+    </apex:actionFunction>
+    <apex:actionFunction name="startEditMemberAF"
+      action="{!startEditMember}"
+      reRender="mainForm"
+    >
+      <apex:param name="editId" value="" assignTo="{!editMemberId}" />
+    </apex:actionFunction>
+
+    <div class="ps-wrap">
+      <!-- LEFT SIDEBAR -->
+      <c:JIP_ProjectSidebar projectId="{!selectedProjectId}"
+        projectName="{!projectName}"
+        activePage="settings"
+      />
+
+      <!-- MAIN AREA -->
+      <div class="main-area">
+        <!-- Header -->
+        <div class="ps-header">
+          <div class="ps-header-left">
+            <apex:commandLink action="{!goBackToProject}"
+              styleClass="back-arrow"
+              >&#x2190;</apex:commandLink>
+            <div class="ps-header-title">
+              <span class="icon">&#x1F3E2;</span>
+              <span>{!projectDisplayName}</span>
+            </div>
+          </div>
+          <div class="ps-header-right">
+            <span class="search-icon">&#x1F50D;</span>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div class="ps-content">
+          <!-- Settings navigation panel -->
+          <div class="settings-nav">
+            <div class="settings-nav-header">
+              <span class="gear-icon">&#x2699;</span>
+              <span>{!T['project_settings']}</span>
+            </div>
+            <ul class="settings-nav-list">
+              <li class="{!IF(activeSection == 'basic', 'active', '')}">
+                <apex:commandLink action="{!switchToBasic}" reRender="mainForm"
+                  >{!T['basic_settings']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'members', 'active', '')}">
+                <apex:commandLink action="{!switchToMembers}"
+                  reRender="mainForm"
+                  >{!T['participating_users']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'theme', 'active', '')}">
+                <apex:commandLink action="{!switchToTheme}" reRender="mainForm"
+                  >{!T['theme']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'type', 'active', '')}">
+                <apex:commandLink action="{!switchToType}" reRender="mainForm"
+                  >{!T['type']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'status', 'active', '')}">
+                <apex:commandLink action="{!switchToStatus}" reRender="mainForm"
+                  >{!T['status']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'category', 'active', '')}">
+                <apex:commandLink action="{!switchToCategory}"
+                  reRender="mainForm"
+                  >{!T['category']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'milestone', 'active', '')}">
+                <apex:commandLink action="{!switchToMilestone}"
+                  reRender="mainForm"
+                  >{!T['milestone']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'custom', 'active', '')}">
+                <apex:commandLink action="{!switchToCustom}" reRender="mainForm"
+                  >{!T['custom_attributes']}</apex:commandLink>
+              </li>
+              <li class="{!IF(activeSection == 'integration', 'active', '')}">
+                <apex:commandLink action="{!switchToIntegration}"
+                  reRender="mainForm"
+                  >{!T['integration']}</apex:commandLink>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Main settings content -->
+          <div class="settings-main">
+            <!-- Messages -->
+            <div class="ps-messages">
+              <apex:messages layout="list" />
+            </div>
+
+            <!-- ===== MEMBERS SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'members'}">
+              <h2 class="section-title">
+                {!T['edit_participating_users']}
+                <span class="help-icon">?</span>
+              </h2>
+
+              <!-- Add user box -->
+              <div class="add-user-box">
+                <div class="add-user-row">
+                  <apex:selectList value="{!addWorkerId}"
+                    size="1"
+                    multiselect="false"
+                    styleClass="add-user-select"
+                  >
+                    <apex:selectOptions value="{!availableUserOptions}" />
+                  </apex:selectList>
+                  <apex:selectList value="{!addMemberRole}"
+                    size="1"
+                    multiselect="false"
+                    styleClass="add-role-select"
+                  >
+                    <apex:selectOptions value="{!addRoleOptions}" />
+                  </apex:selectList>
+                </div>
+                <span class="add-user-message-toggle"
+                  >&#x25B8; {!T['add_message']}</span
+                >
+                <div class="add-user-actions">
+                  <apex:commandButton value="{!T['add_to_project']}"
+                    action="{!addMemberToProject}"
+                    reRender="mainForm"
+                    styleClass="btn-add-project {!IF(addWorkerId != null, 'active', '')}"
+                  />
+                  <span class="link-new-user"
+                    >&#x25B8; {!T['add_new_user']}</span
+                  >
+                </div>
+              </div>
+
+              <!-- Admin settings button -->
+              <div class="text-right" style="margin-bottom: 1.5rem">
+                <span class="btn-admin-settings"
+                  >{!T['project_admin_settings']}</span
+                >
+              </div>
+
+              <!-- Teams -->
+              <div class="sub-header">
+                {!T['participating_teams']} (0 {!T['teams']})
+              </div>
+
+              <!-- Users -->
+              <div class="sub-header">
+                {!T['participating_users_count']} ({!memberCount} {!T['users']})
+              </div>
+
+              <!-- Filter bar -->
+              <div class="filter-bar">
+                <span class="filter-label">{!T['filter_users']}</span>
+                <apex:inputText value="{!searchUserKeyword}"
+                  styleClass="filter-input"
+                  html-placeholder="{!T['filter_placeholder']}"
+                />
+                <apex:selectList value="{!filterRole}"
+                  size="1"
+                  multiselect="false"
+                  styleClass="filter-select"
+                >
+                  <apex:selectOptions value="{!roleFilterOptions}" />
+                </apex:selectList>
+                <apex:commandButton value="{!T['search']}"
+                  action="{!searchMembers}"
+                  reRender="mainForm"
+                  style="display: none"
+                />
+                <apex:actionSupport event="onchange"
+                  action="{!searchMembers}"
+                  reRender="mainForm"
+                />
+              </div>
+
+              <!-- Pagination info -->
+              <div class="pagination-info">
+                全 {!memberCount} 件中 {!IF(memberCount > 0, '1', '0')}
+                件～{!memberCount} 件を表示
+                <span class="page-badge">1</span>
+              </div>
+
+              <!-- Members table -->
+              <table class="member-table">
+                <thead>
+                  <tr>
+                    <th style="width: 28%">{!T['handle_name']}</th>
+                    <th style="width: 25%">{!T['email']}</th>
+                    <th style="width: 17%">{!T['permission']}</th>
+                    <th style="width: 12%">{!T['registration_date']}</th>
+                    <th style="width: 18%; text-align: center">
+                      {!T['actions']}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!members}" var="m">
+                    <tr>
+                      <td>
+                        <div class="member-name-cell">
+                          <span class="member-avatar avatar-orange">
+                            {!LEFT(IF(m.Worker__r.LastName__c != null,
+                            m.Worker__r.LastName__c, '?'), 1)}
+                          </span>
+                          {!m.Worker__r.LastName__c} {!m.Worker__r.FirstName__c}
+                        </div>
+                      </td>
+                      <td>{!m.Worker__r.Email__c}</td>
+                      <td>
+                        <apex:outputPanel rendered="{!editMemberId != m.Id}">
+                          {!m.Role__c}
+                        </apex:outputPanel>
+                        <apex:outputPanel rendered="{!editMemberId == m.Id}">
+                          <div class="edit-role-cell">
+                            <apex:selectList value="{!editMemberRole}"
+                              size="1"
+                              multiselect="false"
+                              styleClass="edit-role-select"
+                            >
+                              <apex:selectOptions value="{!addRoleOptions}" />
+                            </apex:selectList>
+                            <apex:commandButton value="{!T['save']}"
+                              action="{!updateMemberRole}"
+                              reRender="mainForm"
+                              styleClass="btn-save-role"
+                            />
+                            <apex:commandButton value="{!T['cancel']}"
+                              action="{!cancelEditMember}"
+                              reRender="mainForm"
+                              styleClass="btn-cancel-role"
+                            />
+                          </div>
+                        </apex:outputPanel>
+                      </td>
+                      <td>
+                        <apex:outputText value="{0,date,yyyy/MM/dd}"
+                          rendered="{!m.JoinDate__c != null}"
+                        >
+                          <apex:param value="{!m.JoinDate__c}" />
+                        </apex:outputText>
+                      </td>
+                      <td style="text-align: center">
+                        <button
+                          type="button"
+                          class="edit-btn"
+                          onclick="
+                            startEditMemberAF('{!m.Id}');
+                            return false;
+                          "
+                          title="{!T['edit']}"
+                        >
+                          &#x270E;
+                        </button>
+                        <button
+                          type="button"
+                          class="delete-btn"
+                          onclick="if(confirm('{!IF(language == 'en', 'Remove this member?', 'このメンバーを削除しますか？')}')){removeMemberAF('{!m.Id}');} return false;"
+                          title="{!T['delete']}"
+                        >
+                          &#x2716;
+                        </button>
+                      </td>
+                    </tr>
+                  </apex:repeat>
+                  <apex:outputPanel rendered="{!memberCount == 0}">
+                    <tr>
+                      <td
+                        colspan="5"
+                        style="text-align: center; color: #999; padding: 1.5rem"
+                      >
+                        メンバーはまだ追加されていません。
+                      </td>
+                    </tr>
+                  </apex:outputPanel>
+                </tbody>
+              </table>
+
+              <!-- Bottom pagination info -->
+              <div class="pagination-info" style="margin-top: 0.5rem">
+                全 {!memberCount} 件中 {!IF(memberCount > 0, '1', '0')}
+                件～{!memberCount} 件を表示
+                <span class="page-badge">1</span>
+              </div>
+            </apex:outputPanel>
+
+            <!-- ===== BASIC SETTINGS SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'basic'}">
+              <h2 class="section-title">{!T['basic_settings']}</h2>
+
+              <!-- Language Setting -->
+              <div class="add-user-box" style="max-width: 400px">
+                <div style="margin-bottom: 0.8rem">
+                  <label
+                    style="
+                      font-weight: 600;
+                      font-size: 0.9rem;
+                      color: var(--text);
+                      display: block;
+                      margin-bottom: 0.4rem;
+                    "
+                  >
+                    {!T['language']}
+                  </label>
+                  <apex:selectList value="{!project.Language__c}"
+                    size="1"
+                    multiselect="false"
+                    styleClass="add-user-select"
+                    style="margin-bottom: 0"
+                  >
+                    <apex:selectOption itemValue="ja"
+                      itemLabel="日本語 (Japanese)"
+                    />
+                    <apex:selectOption itemValue="en" itemLabel="English" />
+                  </apex:selectList>
+                </div>
+                <apex:commandButton value="{!T['save']}"
+                  action="{!saveLanguage}"
+                  reRender="mainForm"
+                  styleClass="btn-add-project active"
+                />
+              </div>
+            </apex:outputPanel>
+
+            <!-- ===== THEME SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'theme'}">
+              <h2 class="section-title">{!T['theme']}</h2>
+              <div class="placeholder-content">{!T['theme_placeholder']}</div>
+            </apex:outputPanel>
+
+            <!-- ===== TYPE SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'type'}">
+              <h2 class="section-title">{!T['type']}</h2>
+              <div class="placeholder-content">{!T['type_placeholder']}</div>
+            </apex:outputPanel>
+
+            <!-- ===== STATUS SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'status'}">
+              <h2 class="section-title">{!T['status']}</h2>
+              <div class="placeholder-content">{!T['status_placeholder']}</div>
+            </apex:outputPanel>
+
+            <!-- ===== CATEGORY SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'category'}">
+              <h2 class="section-title">{!T['category']}</h2>
+              <div class="placeholder-content">
+                {!T['category_placeholder']}
+              </div>
+            </apex:outputPanel>
+
+            <!-- ===== MILESTONE SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'milestone'}">
+              <h2 class="section-title">{!T['milestone']}</h2>
+              <div class="placeholder-content">
+                {!T['milestone_placeholder']}
+              </div>
+            </apex:outputPanel>
+
+            <!-- ===== CUSTOM SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'custom'}">
+              <h2 class="section-title">{!T['custom_attributes']}</h2>
+              <div class="placeholder-content">{!T['custom_placeholder']}</div>
+            </apex:outputPanel>
+
+            <!-- ===== INTEGRATION SECTION ===== -->
+            <apex:outputPanel rendered="{!activeSection == 'integration'}">
+              <h2 class="section-title">{!T['integration']}</h2>
+              <div class="placeholder-content">
+                {!T['integration_placeholder']}
+              </div>
+            </apex:outputPanel>
+          </div>
+        </div>
+      </div>
+    </div>
+  </apex:form>
+</apex:page>

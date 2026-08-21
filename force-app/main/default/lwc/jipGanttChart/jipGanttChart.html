@@ -1,0 +1,39 @@
+<template>
+    <lightning-card title="ガントチャート" icon-name="utility:date_input">
+        <div class="slds-p-around_medium">
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </template>
+            <template if:false={isLoading}>
+                <template if:true={hasData}>
+                    <div class="gantt-container">
+                        <div class="gantt-header">
+                            <div class="gantt-label-col gantt-header-cell">タスク</div>
+                            <div class="gantt-timeline">
+                                <template for:each={dateHeaders} for:item="dh">
+                                    <div key={dh.key} class="gantt-date-cell">{dh.label}</div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="gantt-body">
+                            <template for:each={ganttRows} for:item="row">
+                                <div key={row.id} class="gantt-row">
+                                    <div class="gantt-label-col">
+                                        <span class={row.statusClass}>{row.taskKey}</span>
+                                        <span class="gantt-subject" title={row.subject}>{row.subjectShort}</span>
+                                    </div>
+                                    <div class="gantt-timeline">
+                                        <div class={row.barClass} style={row.barStyle} title={row.tooltip}></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template if:false={hasData}>
+                    <div class="empty-state">データがありません</div>
+                </template>
+            </template>
+        </div>
+    </lightning-card>
+</template>

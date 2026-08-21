@@ -1,0 +1,42 @@
+.chart-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+.util-table {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+}
+.util-header {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 0.3rem;
+    font-weight: 600;
+    color: #666;
+}
+.util-row {
+    display: flex;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 0.3rem 0;
+}
+.util-col-name {
+    flex: 2;
+}
+.util-col {
+    flex: 1;
+    text-align: right;
+}
+.util-over {
+    color: #d9534f;
+    font-weight: 600;
+}
+.util-normal {
+    color: #2baf6a;
+    font-weight: 600;
+}
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+}

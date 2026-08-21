@@ -1,0 +1,1005 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HROrganizationController"
+  lightningStylesheets="true"
+  docType="html-5.0"
+  showHeader="false"
+>
+  <apex:slds />
+
+  <style>
+    :root {
+      --primary: #2c5282;
+      --primary-dark: #1a365d;
+      --primary-light: #4299e1;
+      --success: #38a169;
+      --success-light: #68d391;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --bg: #f7fafc;
+      --white: #ffffff;
+      --text: #2d3748;
+      --text-light: #718096;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    .hr-wrap {
+      display: flex;
+      min-height: 100vh;
+      font-family: "Salesforce Sans", "Meiryo", "Yu Gothic", sans-serif;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    .hr-main-content {
+      flex: 1;
+      background: var(--bg);
+      min-width: 0;
+    }
+    .hr-page-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hr-page-header h1 {
+      font-size: 1.15rem;
+      margin: 0;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .breadcrumb a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    /* Organization Cards */
+    .org-content {
+      padding: 1.5rem;
+      width: 100%;
+    }
+    .org-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+    @media (max-width: 1024px) {
+      .org-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+    .org-card {
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .org-card-header {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .org-card-header h2 {
+      font-size: 1rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .org-card-body {
+      padding: 1.2rem;
+    }
+
+    /* Org Tree */
+    .org-tree {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .org-tree-item {
+      position: relative;
+      padding-left: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .org-tree-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1rem;
+      height: 1rem;
+      border-left: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
+    }
+    .org-node {
+      background: var(--bg);
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .org-node:hover {
+      background: #edf2f7;
+      transform: translateX(3px);
+    }
+    .org-node .node-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+    .org-node .node-icon img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+    .org-node .node-info .name {
+      font-weight: 600;
+    }
+    .org-node .node-info .count {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* Department List */
+    .dept-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .dept-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.15s;
+    }
+    .dept-item:hover {
+      background: #f8fafc;
+    }
+    .dept-item:last-child {
+      border-bottom: none;
+    }
+    .dept-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .dept-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+    .dept-name {
+      font-weight: 600;
+    }
+    .dept-count {
+      font-size: 0.78rem;
+      color: var(--text-light);
+    }
+    .dept-actions {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    /* Permission Table */
+    .perm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .perm-table th {
+      background: #f8fafc;
+      padding: 0.6rem;
+      text-align: left;
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+    }
+    .perm-table td {
+      padding: 0.6rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .perm-badge {
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .perm-admin {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    .perm-manager {
+      background: #feebc8;
+      color: #744210;
+    }
+    .perm-user {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover {
+      background: #f8fafc;
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c53030;
+    }
+
+    /* Icon Buttons */
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-icon-primary {
+      background: var(--success);
+      color: white;
+    }
+    .btn-icon-primary:hover {
+      background: var(--success-light);
+    }
+    .btn-icon-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-icon-outline:hover {
+      background: #f8fafc;
+    }
+    .btn-icon-danger {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-icon-danger:hover {
+      background: #c53030;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-box {
+      background: var(--white);
+      border-radius: 12px;
+      width: 480px;
+      max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: var(--text-light);
+      line-height: 1;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .modal-close:hover {
+      background: var(--border);
+    }
+    .modal-body {
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    .form-group label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .form-input {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.88rem;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus {
+      border-color: var(--primary-light);
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      padding: 0.9rem 1.4rem;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    /* Messages */
+    .msg-bar {
+      margin: 0.8rem 1.5rem 0;
+      padding: 0.7rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .msg-confirm {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .msg-error {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+  </style>
+
+  <apex:form id="mainForm">
+    <!-- Action Functions -->
+    <apex:actionFunction name="JS_openEditDept"
+      action="{!openEditModal}"
+      rerender="mainForm"
+      oncomplete="renderOrgTree()"
+    >
+      <apex:param name="p1" assignTo="{!editDeptId}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="JS_deleteDept"
+      action="{!deleteDepartment}"
+      rerender="mainForm"
+      oncomplete="renderOrgTree()"
+    >
+      <apex:param name="p1" assignTo="{!deleteDeptId}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="JS_closeModal"
+      action="{!closeModal}"
+      rerender="mainForm"
+      oncomplete="renderOrgTree()"
+    />
+    <apex:actionFunction name="JS_viewDeptWorkers"
+      action="{!openWorkersModal}"
+      rerender="mainForm"
+      oncomplete="renderOrgTree()"
+    >
+      <apex:param name="p1" assignTo="{!viewDeptId}" value="" />
+    </apex:actionFunction>
+    <apex:actionFunction name="JS_closeWorkersModal"
+      action="{!closeWorkersModal}"
+      rerender="mainForm"
+      oncomplete="renderOrgTree()"
+    />
+
+    <div class="hr-wrap">
+      <c:JIP_HRSidebar activePage="organization" />
+
+      <div class="hr-main-content">
+        <div class="hr-page-header">
+          <div>
+            <div class="breadcrumb">
+              <a href="{!$Page.JIP_WorkerManagementPage}">{!T['hr_system']}</a>
+              / {!T['org_auth_mgmt']}
+            </div>
+            <h1>&#127970; {!T['org_auth_mgmt']}</h1>
+          </div>
+          <div style="display: flex; gap: 0.5rem">
+            <apex:selectList value="{!language}"
+              size="1"
+              styleClass="btn btn-outline"
+              onchange="changeLanguageAction()"
+            >
+              <apex:selectOptions value="{!languageOptions}" />
+            </apex:selectList>
+            <apex:actionFunction name="changeLanguageAction"
+              action="{!changeLanguage}"
+              rerender="mainForm"
+              oncomplete="renderOrgTree()"
+            />
+            <apex:commandButton value="+ {!T['add_department']}"
+              action="{!openNewModal}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+              oncomplete="renderOrgTree()"
+            />
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <apex:pageMessages />
+
+        <div class="org-content">
+          <div class="org-grid">
+            <!-- Organization Tree Card -->
+            <div class="org-card">
+              <div class="org-card-header">
+                <h2>&#128205; 組織ツリー</h2>
+                <apex:commandButton value="+ 部署追加"
+                  action="{!openNewModal}"
+                  styleClass="btn btn-sm btn-primary"
+                  rerender="mainForm"
+                  oncomplete="renderOrgTree()"
+                />
+              </div>
+              <div class="org-card-body">
+                <textarea id="orgTreeData" style="display: none">
+<apex:outputText value="{!treeDataJson}" />
+                </textarea>
+                <ul class="org-tree" id="orgTreeContainer">
+                  <!-- Tree will be rendered by JavaScript -->
+                </ul>
+              </div>
+            </div>
+
+            <!-- Department List Card -->
+            <div class="org-card">
+              <div class="org-card-header">
+                <h2>&#128101; 社員階層一覧</h2>
+                <a
+                  href="/apex/JIP_WorkerDetailsPage?id=new"
+                  class="btn btn-sm btn-primary"
+                  style="text-decoration: none"
+                  >+ 社員追加</a
+                >
+              </div>
+              <div class="org-card-body">
+                <textarea id="employeeTreeData" style="display: none">
+<apex:outputText value="{!employeeHierarchyJson}" /></textarea
+                >
+                <ul class="org-tree" id="employeeTreeContainer"></ul>
+              </div>
+            </div>
+
+            <!-- Permission/Role Card -->
+            <div class="org-card" style="grid-column: 1 / -1">
+              <div class="org-card-header">
+                <h2>&#128274; 権限管理（Role / Permission）</h2>
+                <button type="button" class="btn btn-sm btn-primary">
+                  + 権限追加
+                </button>
+              </div>
+              <div class="org-card-body" style="padding: 0; overflow-x: auto">
+                <table class="perm-table">
+                  <thead>
+                    <tr>
+                      <th>ロール名</th>
+                      <th>説明</th>
+                      <th>ユーザー数</th>
+                      <th>社員管理</th>
+                      <th>勤怠管理</th>
+                      <th>給与閲覧</th>
+                      <th>承認権限</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>システム管理者</strong></td>
+                      <td>全機能へのフルアクセス</td>
+                      <td>3名</td>
+                      <td><span class="perm-badge perm-admin">フル</span></td>
+                      <td><span class="perm-badge perm-admin">フル</span></td>
+                      <td><span class="perm-badge perm-admin">フル</span></td>
+                      <td><span class="perm-badge perm-admin">フル</span></td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-outline">
+                          編集
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>部長</strong></td>
+                      <td>部署内の管理権限</td>
+                      <td>5名</td>
+                      <td><span class="perm-badge perm-manager">部署</span></td>
+                      <td><span class="perm-badge perm-manager">部署</span></td>
+                      <td><span class="perm-badge perm-manager">部署</span></td>
+                      <td><span class="perm-badge perm-admin">承認</span></td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-outline">
+                          編集
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>一般社員</strong></td>
+                      <td>自分の情報のみ</td>
+                      <td>42名</td>
+                      <td><span class="perm-badge perm-user">自分</span></td>
+                      <td><span class="perm-badge perm-user">自分</span></td>
+                      <td><span class="perm-badge perm-user">自分</span></td>
+                      <td>—</td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-outline">
+                          編集
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add / Edit Department Modal -->
+    <apex:outputPanel rendered="{!showModal}" layout="block">
+      <div class="modal-overlay">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h3>
+              <apex:outputText rendered="{!isEditMode}"
+                >&#128393; 部署を編集</apex:outputText>
+              <apex:outputText rendered="{!NOT(isEditMode)}"
+                >&#43; 新規部署を追加</apex:outputText>
+            </h3>
+            <button
+              type="button"
+              class="modal-close"
+              onclick="
+                JS_closeModal();
+                return false;
+              "
+            >
+              &#215;
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>部署名 <span style="color: var(--danger)">*</span></label>
+              <apex:inputField value="{!currentDepartment.Name}"
+                styleClass="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>部署コード</label>
+              <apex:inputField value="{!currentDepartment.DepartmentCode__c}"
+                styleClass="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>上位部署</label>
+              <apex:selectList value="{!currentDepartment.ParentDepartment__c}"
+                size="1"
+                styleClass="form-input"
+              >
+                <apex:selectOptions value="{!parentDepartmentOptions}" />
+              </apex:selectList>
+            </div>
+            <div class="form-group">
+              <label>部署長</label>
+              <apex:selectList value="{!currentDepartment.Manager__c}"
+                size="1"
+                styleClass="form-input"
+              >
+                <apex:selectOptions value="{!managerOptions}" />
+              </apex:selectList>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <apex:commandButton value="キャンセル"
+              action="{!closeModal}"
+              styleClass="btn btn-outline"
+              rerender="mainForm"
+              oncomplete="renderOrgTree()"
+            />
+            <apex:commandButton value="{!IF(isEditMode, '更新する', '登録する')}"
+              action="{!saveDepartment}"
+              styleClass="btn btn-primary"
+              rerender="mainForm"
+              oncomplete="renderOrgTree()"
+            />
+          </div>
+        </div>
+      </div>
+    </apex:outputPanel>
+
+    <!-- Workers List Modal -->
+    <apex:outputPanel rendered="{!showWorkersModal}" layout="block">
+      <div class="modal-overlay">
+        <div class="modal-box" style="width: 700px">
+          <div class="modal-header">
+            <h3>&#128100; {!viewDeptName} - 所属社員一覧</h3>
+            <button
+              type="button"
+              class="modal-close"
+              onclick="
+                JS_closeWorkersModal();
+                return false;
+              "
+            >
+              &#215;
+            </button>
+          </div>
+          <div
+            class="modal-body"
+            style="padding: 0; max-height: 400px; overflow-y: auto"
+          >
+            <apex:outputPanel rendered="{!deptWorkers.size == 0}">
+              <div
+                style="
+                  padding: 2rem;
+                  text-align: center;
+                  color: var(--text-light);
+                "
+              >
+                この部署には在職中の社員がいません
+              </div>
+            </apex:outputPanel>
+            <apex:outputPanel rendered="{!deptWorkers.size > 0}">
+              <table class="perm-table">
+                <thead>
+                  <tr>
+                    <th>社員コード</th>
+                    <th>氏名</th>
+                    <th>役職</th>
+                    <th>メール</th>
+                    <th>電話</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <apex:repeat value="{!deptWorkers}" var="w">
+                    <tr style="{!IF(w.isManager, 'background: #fffbea;', '')}">
+                      <td>{!w.workerCode}</td>
+                      <td>
+                        <a
+                          href="/apex/JIP_WorkerDetailsPage?id={!w.workerId}"
+                          style="
+                            color: var(--primary-light);
+                            text-decoration: none;
+                            font-weight: 600;
+                          "
+                        >
+                          {!w.workerName}
+                        </a>
+                        <apex:outputText rendered="{!w.isManager}">
+                          <span
+                            style="
+                              margin-left: 0.4rem;
+                              padding: 0.12rem 0.45rem;
+                              border-radius: 999px;
+                              background: #f6ad55;
+                              color: #744210;
+                              font-size: 0.68rem;
+                              font-weight: 700;
+                            "
+                            >★ 部長</span
+                          >
+                        </apex:outputText>
+                      </td>
+                      <td>{!w.position}</td>
+                      <td>{!w.email}</td>
+                      <td>{!w.phone}</td>
+                    </tr>
+                  </apex:repeat>
+                </tbody>
+              </table>
+            </apex:outputPanel>
+          </div>
+          <div class="modal-footer">
+            <apex:commandButton value="閉じる"
+              action="{!closeWorkersModal}"
+              styleClass="btn btn-outline"
+              rerender="mainForm"
+              oncomplete="renderOrgTree()"
+            />
+          </div>
+        </div>
+      </div>
+    </apex:outputPanel>
+  </apex:form>
+
+  <script>
+    function deleteDeptConfirm(btn) {
+      var name = btn.getAttribute("data-deptname");
+      var id = btn.getAttribute("data-deptid");
+      if (
+        confirm(
+          "\u300C" +
+            name +
+            "\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F"
+        )
+      ) {
+        JS_deleteDept(id);
+      }
+    }
+    function deleteTreeDeptConfirm(id, name) {
+      if (
+        confirm(
+          "\u300C" +
+            name +
+            "\u300D\u3092\u524A\u9664\u3057\u307E\u3059\u304B\uFF1F"
+        )
+      ) {
+        JS_deleteDept(id);
+      }
+    }
+
+    // Organization Tree Rendering Functions
+    function escapeHtmlTree(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderTreeNode(node, depth) {
+      var isRoot = depth === 0;
+      var iconStyle = isRoot
+        ? ""
+        : "background: var(--primary-light); font-size: 0.8rem;";
+      var icon = isRoot ? "&#127970;" : "&#128100;";
+      var itemStyle = isRoot ? "padding-left: 0; margin-bottom: 0.75rem;" : "";
+
+      var codeHtml = node.deptCode
+        ? '<span style="font-size: 0.72rem; color: var(--text-light); margin-left: 0.3rem;">(' +
+          escapeHtmlTree(node.deptCode) +
+          ")</span>"
+        : "";
+      var managerHtml =
+        node.managerName && node.managerName !== "-"
+          ? "\u00b7 " + escapeHtmlTree(node.managerName)
+          : "";
+      var nodeIconHtml = node.iconUrl
+        ? '<img src="' + escapeHtmlTree(node.iconUrl) + '" alt="dept-icon" />'
+        : icon;
+
+      var html = '<li class="org-tree-item" style="' + itemStyle + '">';
+      html +=
+        '<div class="org-node" style="width: 100%; justify-content: space-between; cursor: default;">';
+      html += '<div style="display: flex; align-items: center; gap: 0.5rem;">';
+      html +=
+        '<span class="node-icon" style="' +
+        iconStyle +
+        '">' +
+        nodeIconHtml +
+        "</span>";
+      html += '<div class="node-info">';
+      html +=
+        '<div class="name">' +
+        escapeHtmlTree(node.deptName) +
+        codeHtml +
+        "</div>";
+      html +=
+        '<div class="count">' +
+        escapeHtmlTree(node.memberCount) +
+        "\u540d" +
+        managerHtml +
+        "</div>";
+      html += "</div></div>";
+      html += '<div style="display: flex; gap: 0.2rem;">';
+      html +=
+        '<button type="button" class="btn-icon btn-icon-primary" title="\u53c2\u7167" onclick="JS_viewDeptWorkers(\'' +
+        node.id +
+        "'); return false;\">&#128065;</button>";
+      html +=
+        '<button type="button" class="btn-icon btn-icon-outline" title="\u7de8\u96c6" onclick="JS_openEditDept(\'' +
+        node.id +
+        "'); return false;\">&#9998;</button>";
+      html +=
+        '<button type="button" class="btn-icon btn-icon-danger" title="\u524a\u9664" onclick="deleteTreeDeptConfirm(\'' +
+        node.id +
+        "', '" +
+        escapeHtmlTree(node.deptName).replace(/'/g, "\\'") +
+        "'); return false;\">&#128465;</button>";
+      html += "</div></div>";
+
+      if (node.children && node.children.length > 0) {
+        html += '<ul class="org-tree">';
+        for (var i = 0; i < node.children.length; i++) {
+          html += renderTreeNode(node.children[i], depth + 1);
+        }
+        html += "</ul>";
+      }
+
+      html += "</li>";
+      return html;
+    }
+
+    function renderOrgTree() {
+      var container = document.getElementById("orgTreeContainer");
+      var dataEl = document.getElementById("orgTreeData");
+      if (!container || !dataEl) {
+        renderEmployeeTree();
+        return;
+      }
+
+      try {
+        var treeData = JSON.parse(dataEl.value || "[]");
+        var html = "";
+        for (var i = 0; i < treeData.length; i++) {
+          html += renderTreeNode(treeData[i], 0);
+        }
+        container.innerHTML = html;
+      } catch (e) {
+        console.error("Error rendering tree:", e);
+      }
+      renderEmployeeTree();
+    }
+
+    function renderEmployeeNode(node, depth) {
+      var isRoot = depth === 0;
+      var iconStyle = isRoot
+        ? "background: #2b6cb0;"
+        : "background: #4299e1; font-size: 0.8rem;";
+      var itemStyle = isRoot ? "padding-left: 0; margin-bottom: 0.75rem;" : "";
+      var codeHtml = node.workerCode
+        ? '<span style="font-size: 0.72rem; color: var(--text-light); margin-left: 0.3rem;">(' +
+          escapeHtmlTree(node.workerCode) +
+          ")</span>"
+        : "";
+      var positionHtml = node.position ? escapeHtmlTree(node.position) : "-";
+      var departmentHtml = node.departmentName
+        ? " ・ " + escapeHtmlTree(node.departmentName)
+        : "";
+      var employeeIconHtml = node.avatarUrl
+        ? '<img src="' +
+          escapeHtmlTree(node.avatarUrl) +
+          '" alt="worker-avatar" />'
+        : "&#128100;";
+      var managerBadgeHtml = node.isDeptManager
+        ? '<span style="margin-left: 0.4rem; padding: 0.12rem 0.45rem; border-radius: 999px; background: #f6ad55; color: #744210; font-size: 0.68rem; font-weight: 700;">★ 部長</span>'
+        : "";
+
+      var html = '<li class="org-tree-item" style="' + itemStyle + '">';
+      html +=
+        '<div class="org-node" style="width: 100%; justify-content: space-between; cursor: default;">';
+      html += '<div style="display: flex; align-items: center; gap: 0.5rem;">';
+      html +=
+        '<span class="node-icon" style="' +
+        iconStyle +
+        '">' +
+        employeeIconHtml +
+        "</span>";
+      html += '<div class="node-info">';
+      html +=
+        '<div class="name">' +
+        escapeHtmlTree(node.workerName) +
+        codeHtml +
+        managerBadgeHtml +
+        "</div>";
+      html += '<div class="count">' + positionHtml + departmentHtml + "</div>";
+      html += "</div></div>";
+      html += '<div style="display: flex; gap: 0.2rem;">';
+      html +=
+        '<a class="btn-icon btn-icon-outline" title="社員詳細" href="/apex/JIP_WorkerDetailsPage?id=' +
+        node.id +
+        '">&#128269;</a>';
+      html += "</div></div>";
+
+      if (node.children && node.children.length > 0) {
+        html += '<ul class="org-tree">';
+        for (var i = 0; i < node.children.length; i++) {
+          html += renderEmployeeNode(node.children[i], depth + 1);
+        }
+        html += "</ul>";
+      }
+
+      html += "</li>";
+      return html;
+    }
+
+    function renderEmployeeTree() {
+      var container = document.getElementById("employeeTreeContainer");
+      var dataEl = document.getElementById("employeeTreeData");
+      if (!container || !dataEl) return;
+
+      try {
+        var treeData = JSON.parse(dataEl.value || "[]");
+        var html = "";
+        for (var i = 0; i < treeData.length; i++) {
+          html += renderEmployeeNode(treeData[i], 0);
+        }
+        if (!html) {
+          html =
+            '<li style="padding: 0.8rem 0; color: var(--text-light);">在職中の社員データがありません。</li>';
+        }
+        container.innerHTML = html;
+      } catch (e) {
+        console.error("Error rendering employee tree:", e);
+      }
+    }
+
+    // Initial render on page load
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", renderOrgTree);
+    } else {
+      renderOrgTree();
+    }
+  </script>
+</apex:page>

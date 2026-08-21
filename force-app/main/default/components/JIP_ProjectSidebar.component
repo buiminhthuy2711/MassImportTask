@@ -1,0 +1,143 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:component controller="JIP_SidebarController">
+  <apex:attribute name="projectId"
+    type="String"
+    description="The project record ID"
+    required="true"
+    assignTo="{!projectIdParam}"
+  />
+  <apex:attribute name="projectName"
+    type="String"
+    description="The project name displayed in sidebar header"
+    required="true"
+  />
+  <apex:attribute name="activePage"
+    type="String"
+    description="The current active page: home, task, board, gantt, document, wiki, file, settings"
+    required="true"
+  />
+
+  <style>
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar {
+      width: 180px;
+      background: var(--green-dark);
+      color: #fff;
+      flex-shrink: 0;
+      padding-top: 0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar-header {
+      background: var(--green-darker);
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .sidebar-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1rem;
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .sidebar-nav li a:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .sidebar-nav li.active a {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-weight: 600;
+    }
+    .sidebar-nav .nav-icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        width: 50px;
+      }
+      .sidebar-nav li a span:not(.nav-icon),
+      .sidebar-header span {
+        display: none;
+      }
+    }
+  </style>
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span>{!projectName}</span>
+    </div>
+    <ul class="sidebar-nav">
+      <li class="{!IF(activePage == 'home', 'active', '')}">
+        <a href="{!$Page.JIP_ProjectHomePage}?projectId={!projectId}">
+          <span class="nav-icon">&#x2302;</span><span>{!T['home']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'task', 'active', '')}">
+        <a href="{!$Page.JIP_ProjectTaskPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x2261;</span><span>{!T['task_list']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'board', 'active', '')}">
+        <a href="{!$Page.JIP_ProjectTaskBoardPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x25A6;</span><span>{!T['board']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'gantt', 'active', '')}">
+        <a href="{!$Page.JIP_GanttChartPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x2500;</span><span>{!T['gantt']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'document', 'active', '')}">
+        <a href="{!$Page.JIP_DocumentManagementPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x2630;</span><span>{!T['document']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'wiki', 'active', '')}">
+        <a href="#">
+          <span class="nav-icon">W</span><span>{!T['wiki']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'file', 'active', '')}">
+        <a href="{!$Page.JIP_FileManagementPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x1F4C1;</span><span>{!T['files']}</span>
+        </a>
+      </li>
+      <li class="{!IF(activePage == 'settings', 'active', '')}">
+        <a href="{!$Page.JIP_ProjectSettingsPage}?projectId={!projectId}">
+          <span class="nav-icon">&#x2699;</span><span>{!T['settings']}</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Activity Feed Panel (shared across all pages) -->
+  <c:JIP_ActivityFeedPanel projectId="{!projectId}" />
+</apex:component>

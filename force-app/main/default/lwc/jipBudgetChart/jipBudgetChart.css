@@ -1,0 +1,51 @@
+.kpi-row-top {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+}
+.kpi-box {
+    text-align: center;
+    flex: 1;
+}
+.kpi-label {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.2rem;
+}
+.kpi-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.kpi-budget { color: #5b9bd5; }
+.kpi-actual { color: #2baf6a; }
+.kpi-remaining { color: #e8833a; }
+.kpi-danger { color: #d9534f; }
+.chart-wrapper {
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+    height: 250px;
+}
+.progress-bar-wrapper {
+    margin-top: 1rem;
+}
+.progress-label {
+    font-size: 0.82rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+}
+.progress-track {
+    width: 100%;
+    height: 10px;
+    background: #e8e8e8;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+.progress-ok { background: #2baf6a; }
+.progress-danger { background: #d9534f; }

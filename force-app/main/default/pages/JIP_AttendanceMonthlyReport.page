@@ -1,0 +1,127 @@
+<!--
+ * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
+ * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
+ * All rights reserved.
+ * 
+ * Unauthorized copying, modification, distribution, or use of this source code,
+ * in whole or in part, is strictly prohibited without prior written permission.
+ * 
+ * @see https://www.jip-academy.com/
+-->
+<apex:page controller="JIP_HRAttendanceController"
+  contentType="application/vnd.ms-excel#AttendanceMonthlyReport_{!MONTH(TODAY())}_{!YEAR(TODAY())}.xls"
+  cache="true"
+>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style>
+      table {
+        border-collapse: collapse;
+        font-family: "MS Gothic", monospace;
+      }
+      th,
+      td {
+        border: 1px solid #000;
+        padding: 4px 8px;
+      }
+      th {
+        background-color: #4472c4;
+        color: white;
+        font-weight: bold;
+      }
+      .header-row {
+        background-color: #d9e2f3;
+      }
+      .total-row {
+        background-color: #fff2cc;
+        font-weight: bold;
+      }
+      .overtime-warning {
+        background-color: #fce4d6;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>勤怠月次レポート - {!YEAR(TODAY())}年{!MONTH(TODAY())}月</h2>
+    <p>
+      出力日時:
+      <apex:outputText value="{0, date, yyyy/MM/dd HH:mm}"
+        ><apex:param value="{!NOW()}"
+      /></apex:outputText>
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>社員名</th>
+          <th>部署</th>
+          <th>日付</th>
+          <th>出勤時刻</th>
+          <th>退勤時刻</th>
+          <th>実労働時間</th>
+          <th>残業時間</th>
+          <th>ステータス</th>
+          <th>GPS</th>
+          <th>IP</th>
+          <th>デバイス</th>
+        </tr>
+      </thead>
+      <tbody>
+        <apex:repeat value="{!attendanceList}" var="att">
+          <tr class="{!IF(att.overtimeHours > 2, 'overtime-warning', '')}">
+            <td>{!att.employeeName}</td>
+            <td>{!att.departmentName}</td>
+            <td>
+              <apex:outputText value="{0, date, yyyy/MM/dd}"
+                ><apex:param value="{!att.record.AttendanceDate__c}"
+              /></apex:outputText>
+            </td>
+            <td>{!att.checkInTime}</td>
+            <td>{!att.checkOutTime}</td>
+            <td>{!att.workingHours}</td>
+            <td>{!att.overtimeHours}</td>
+            <td>{!att.status}</td>
+            <td>{!att.record.GPS_Location__c}</td>
+            <td>{!att.record.IP_Address__c}</td>
+            <td>{!att.record.Device__c}</td>
+          </tr>
+        </apex:repeat>
+      </tbody>
+    </table>
+
+    <br /><br />
+    <h3>サマリー</h3>
+    <table>
+      <tr class="header-row">
+        <td>項目</td>
+        <td>値</td>
+      </tr>
+      <tr>
+        <td>出勤中</td>
+        <td>{!stats.workingCount}名</td>
+      </tr>
+      <tr>
+        <td>未出勤</td>
+        <td>{!stats.notCheckedInCount}名</td>
+      </tr>
+      <tr>
+        <td>有給休暇</td>
+        <td>{!stats.onLeaveCount}名</td>
+      </tr>
+      <tr>
+        <td>遅刻</td>
+        <td>{!stats.lateCount}名</td>
+      </tr>
+      <tr class="total-row">
+        <td>月間残業時間合計</td>
+        <td>{!stats.monthlyOvertimeHours}時間</td>
+      </tr>
+    </table>
+
+    <br />
+    <p style="font-size: 10px; color: #666">
+      ※ 労働基準法に基づき、月間残業45時間を超える社員は管理が必要です。<br />
+      ※ 2時間以上の残業がある日はオレンジでハイライトされています。
+    </p>
+  </body>
+</apex:page>
