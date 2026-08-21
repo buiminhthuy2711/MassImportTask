@@ -1112,6 +1112,8 @@ public with sharing class JIP_TranslationHelper {
     addTranslation('mass_import_tasks', 'en', 'Mass Import Tasks');
     addTranslation('preview_import', 'ja', 'プレビュー');
     addTranslation('preview_import', 'en', 'Preview');
+    addTranslation('import_task_count', 'ja', 'タスク数');
+    addTranslation('import_task_count', 'en', 'Task Count');
   }
 
   private static void addTranslation(String key, String lang, String value) {

@@ -1249,8 +1249,9 @@
         </apex:outputPanel>
       </div>
     </div>
+
     <!-- Mass Import Modal -->
-     <apex:outputPanel id="massImprtModal" 
+     <apex:outputPanel id="massImportModal" 
         rendered="{!showMassImportModal}"
      >
       <div class = "modal-overlay">
@@ -1269,6 +1270,40 @@
               action="{!closeMassImportModal}"
               reRender="mainForm"
               styleClass="btn-modal btn-modal-cancel"
+            />
+          </div>
+        </div>
+      </div>
+     </apex:outputPanel>
+
+    <!-- Mass Import Preview Modal -->
+    <apex:outputPanel id="massImportPreviewModal" 
+        rendered="{!showMassImportPreviewModal}"
+     >
+      <div class = "modal-overlay">
+        <div class = "modal-box">
+          <div class = "modal-header">
+            <h2>{!T['preview_import']}</h2>
+          </div>
+          <div class = "modal-body">
+            <div class="upload-section"></div>
+            <span>
+              {!T['import_task_count']}
+              <span class="count-badge">
+                {!massImportTaskCount}
+              </span>
+            </span>
+          </div>
+          <div class = "modal-footer">
+            <apex:commandButton value="{!T['back']}"
+              action="{!closeMassImportPreviewModal}"
+              reRender="mainForm"
+              styleClass="btn-modal btn-modal-cancel"
+            />
+            <apex:commandButton value="{!T['import']}"
+              action="{!importTasks}"
+              reRender="mainForm"
+              styleClass="btn-modal btn-modal-save"
             />
           </div>
         </div>

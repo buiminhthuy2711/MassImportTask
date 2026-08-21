@@ -41,6 +41,8 @@ public with sharing class JIP_ProjectTaskController {
   // Mass import
   public Boolean showMassImportModal { get; set; }
   public Boolean showMassImportPreviewModal { get; set; }
+  public Integer massImportTaskCount { get; set; }
+
   // Language support
   public String getLanguage() {
     if (selectedProjectId == null) {
@@ -399,11 +401,18 @@ public with sharing class JIP_ProjectTaskController {
   public void openMassImportModal() {
     showMassImportModal = true;
   }
+
   public void closeMassImportPreviewModal() {
     showMassImportPreviewModal = false;
   }
+
   public void openMassImportPreviewModal() {
     showMassImportPreviewModal = true;
   }
 
+  public void importTasks() {
+    closeMassImportPreviewModal();
+    closeMassImportModal();
+    loadTasks();
+  }
 }
