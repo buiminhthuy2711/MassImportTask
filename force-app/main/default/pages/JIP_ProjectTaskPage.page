@@ -660,16 +660,6 @@
               styleClass="btn-action btn-action-primary"
             />
           </div>
-          <div class="action-btns">
-            <apex:commandButton value="+ {!T['mass_import_tasks']}"
-              action="{!openMassImportModal}"
-              styleClass="btn-action btn-action-primary"
-            />
-            <apex:commandButton value="+ {!T['add_task']}"
-              action="{!openNewTask}"
-              styleClass="btn-action btn-action-primary"
-            />
-          </div>
         </div>
 
         <!-- Filter Area -->
