@@ -40,10 +40,9 @@ public with sharing class JIP_ProjectTaskController {
 
   // Mass import
   public Boolean showMassImportModal { get; set; }
-  public Boolean showMassImportPreviewModal { get; set; }
-  // Mass import
-  public Boolean showMassImportModal { get; set; }
-  public Boolean showMassImportPreviewModal { get; set; }
+  public Boolean showMassImportConfirmModal { get; set; }
+  public String selectedFileName { get; set; }
+
   // Language support
   public String getLanguage() {
     if (selectedProjectId == null) {
@@ -403,15 +402,14 @@ public with sharing class JIP_ProjectTaskController {
     showMassImportModal = true;
   }
   
-  public void closeMassImportPreviewModal() {
-    showMassImportPreviewModal = false;
+  public void closeMassImportConfirmModal() {
+    showMassImportConfirmModal = false;
   }
 
-  public void openMassImportPreviewModal() {
-    showMassImportPreviewModal = true;
+  public void openMassImportConfirmModal() {
+    showMassImportConfirmModal = true;
   }
 
   public void importTasks() {
-    loadTasks();
   }
 }

@@ -1276,7 +1276,7 @@
                 <input
                    type="file"
                    id="csvFileInput"
-                   accept=".csv,text/csv"
+                   accept=".csv"
                    style="display:none;"
                    onchange="handleCsvFile(this)"
                    />
@@ -1288,8 +1288,9 @@
             </div>
           </div>
           <div class = "modal-footer">
-            <apex:commandButton value="{!T['preview_import']}"
-              action="{!openMassImportPreviewModal}"
+            <apex:commandButton value="{!T['save']}"
+              action="{!openMassImportConfirmModal}"
+              reRender="mainForm"
               styleClass="btn-modal btn-modal-save"
             />
             <apex:commandButton value="{!T['close']}"
@@ -1301,21 +1302,24 @@
         </div>
       </div>
      </apex:outputPanel>
-    <!-- Mass Import Preview Modal -->
-    <apex:outputPanel id="massImportPreviewModal" 
-        rendered="{!showMassImportPreviewModal}"
+
+    <!-- Mass Import Confirm Modal -->
+    <apex:outputPanel id="massImportConfirm" 
+        rendered="{!showMassImportConfirmModal}"
      >
       <div class = "modal-overlay">
         <div class = "modal-box">
           <div class = "modal-header">
-            <h2>{!T['preview_import']}</h2>
+            <h2>{!T['confirm_import']}</h2>
           </div>
           <div class = "modal-body">
-            
+            <span>
+              Are you sure you want to import?
+            </span>   
           </div>
           <div class = "modal-footer">
             <apex:commandButton value="{!T['back']}"
-              action="{!closeMassImportPreviewModal}"
+              action="{!closeMassImportConfirmModal}"
               reRender="mainForm"
               styleClass="btn-modal btn-modal-cancel"
             />
@@ -1643,29 +1647,22 @@
   <!-- Mass import Thắng -->
   <script>
     let selectedCsvFile = null;
-
     function handleCsvFile(input) {
-
         const fileNameElement =
             document.getElementById('selectedFileName');
-
         const errorElement =
             document.getElementById('fileError');
 
         // Reset
         errorElement.style.display = 'none';
         errorElement.textContent = '';
-
         if (!input.files || input.files.length === 0) {
-
             selectedCsvFile = null;
-
             fileNameElement.textContent =
                 'No file selected';
 
             return;
         }
-
         const file = input.files[0];
 
         // Kiểm tra extension
@@ -1692,7 +1689,7 @@
         // Hiển thị tên file
         fileNameElement.textContent =
             file.name;
-
+            
         console.log('Selected CSV:', file.name);
         console.log('File size:', file.size);
         console.log('File type:', file.type);
