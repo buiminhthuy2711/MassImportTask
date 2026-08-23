@@ -1288,7 +1288,8 @@
             </div>
           </div>
           <div class = "modal-footer">
-            <apex:commandButton value="{!T['save']}"
+            <apex:commandButton value="{!T['import']}"
+              onclick="return validateCsvFile();"
               action="{!openMassImportConfirmModal}"
               reRender="mainForm"
               styleClass="btn-modal btn-modal-save"
@@ -1323,7 +1324,7 @@
               reRender="mainForm"
               styleClass="btn-modal btn-modal-cancel"
             />
-            <apex:commandButton value="{!T['import']}"
+            <apex:commandButton value="{!T['confirm']}"
               action="{!importTasks}"
               reRender="mainForm"
               styleClass="btn-modal btn-modal-save"
@@ -1694,7 +1695,19 @@
         console.log('File size:', file.size);
         console.log('File type:', file.type);
     }
-</script>
+  </script>
+
+  <!-- Validate CSV File before confirm -->
+  <script>
+    function validateCsvFile() {
+      if (selectedCsvFile == null) {
+        alert('Please select a CSV file.');
+        return false;
+      }
+      return true;
+    }
+  </script>
+
 <style>
     /* ================================
        Mass Import - Choose File Button

@@ -1114,6 +1114,8 @@ public with sharing class JIP_TranslationHelper {
     addTranslation('preview_import', 'en', 'Preview');
     addTranslation('confirm_import', 'ja', 'インポートの確認');
     addTranslation('confirm_import', 'en', 'Confirm Import');
+    addTranslation('confirm', 'ja', '確認');
+    addTranslation('confirm', 'en', 'Confirm');
   }
 
   private static void addTranslation(String key, String lang, String value) {
