@@ -617,7 +617,8 @@
     }
   </style>
 
-  <apex:form id="mainForm">
+  <!-- <apex:form id="mainForm"> -->
+  <apex:form id="mainForm" enctype="multipart/form-data">
     <apex:actionFunction name="editTaskAF"
       action="{!editTask}"
       reRender="mainForm"
@@ -651,9 +652,10 @@
             - {!T['task_list']}
           </h1>
           <div class="action-btns">
-            <apex:commandButton value="+ {!T['mass_import_tasks']}"
+            <apex:commandButton value="+ Mass Import Tasks"
               action="{!openMassImportModal}"
-              styleClass="btn-action btn-action-primary"
+              reRender="mainForm"
+              styleClass="btn-action"
             />
             <apex:commandButton value="+ {!T['add_task']}"
               action="{!openNewTask}"
@@ -1259,32 +1261,27 @@
           <div class = "modal-header">
             <h2>{!T['mass_import_tasks']}</h2>
           </div>
-          <!-- Thắng -->
           <div class = "modal-body"> 
-            <div class="mass-import-upload">
-              <label class="mass-import-label">
-                Select CSV File
-              </label>
+            <div class="form-group">
+              <label>Select CSV File</label>
               <div class="file-upload-row">
-                <label for="csvFileInput"
-                       class="btn-file-select">
-                       Choose File
-                  </label>   
+                <button
+                  type="button"
+                  class="btn-file-select"
+                  onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
+                  Choose File
+                </button> 
+                <!-- Salesforce Input File -->
+                 <apex:inputFile 
+                  id="csvFileInput"
+                  value="{!importFileBody}"
+                  filename="{!importFileName}"
+                  style="display:none;"
+                  onchange="handleCsvFile(this)"
+                  />
                 <span id="selectedFileName">
                    No file selected
                   </span>  
-                <input
-                   type="file"
-                   id="csvFileInput"
-                   onchange="handleCsvFile(this)"
-                   style="display:none;"
-                   accept=".csv"
-                   />
-                <!-- <apex:outputPanel rendered="{!importFileName != null && importFileName != ''}">
-                  <div class="selected-file-info">
-                    Selected file: {!importFileName}
-                  </div>
-                </apex:outputPanel> -->
               </div>
               <div id="fileError"
                    class="mass-import-error"
@@ -1293,14 +1290,13 @@
             </div>
           </div>
           <div class = "modal-footer">
-            <apex:commandButton value="{!T['save']}"
+            <apex:commandButton value="{!T['import']}"
+              onclick="return validateCsvFile();"
               action="{!openMassImportConfirmModal}"
-              reRender="mainForm"
               styleClass="btn-modal btn-modal-save"
             />
             <apex:commandButton value="{!T['close']}"
               action="{!closeMassImportModal}"
-              reRender="mainForm"
               styleClass="btn-modal btn-modal-cancel"
             />
           </div>
@@ -1315,22 +1311,20 @@
       <div class = "modal-overlay">
         <div class = "modal-box">
           <div class = "modal-header">
-            <h2>{!T['confirm_import']}</h2>
+            <h2>confirm_import</h2>
           </div>
           <div class = "modal-body">
             <span>
               Are you sure you want to import?
-            </span>
+            </span> 
           </div>
           <div class = "modal-footer">
             <apex:commandButton value="{!T['back']}"
               action="{!closeMassImportConfirmModal}"
-              reRender="mainForm"
               styleClass="btn-modal btn-modal-cancel"
             />
-            <apex:commandButton value="{!T['import']}"
+            <apex:commandButton value="{!T['confirm']}"
               action="{!importTasks}"
-              reRender="mainForm"
               styleClass="btn-modal btn-modal-save"
             />
           </div>
@@ -1650,68 +1644,49 @@
     }
   </script>
 
-
-  <!-- Validate CSV File before confirm -->
- <script>
-    function validateCsvFile() {
-      if (selectedCsvFile == null) {
-        alert('Please select a CSV file.');
-        return false;
-      }
-      return true;
-    }
-</script>
-
   <!-- Mass import Thắng -->
   <script>
-    function handleCsvFile(input) {
-        const fileNameElement =
-            document.getElementById('selectedFileName');
-        const errorElement =
-            document.getElementById('fileError');
-
-        // Reset
-        errorElement.style.display = 'none';
-        errorElement.textContent = '';
-        if (!input.files || input.files.length === 0) {
-            selectedCsvFile = null;
-            fileNameElement.textContent =
-                'No file selected';
-
-            return;
-        }
-        const file = input.files[0];
-
-        // Kiểm tra extension
-        if (!file.name.toLowerCase().endsWith('.csv')) {
-
-            selectedCsvFile = null;
-
-            fileNameElement.textContent =
-                'No file selected';
-
-            errorElement.textContent =
-                'Please select a CSV file.';
-
-            errorElement.style.display = 'block';
-
-            input.value = '';
-
-            return;
-        }
-
-        // Lưu file được chọn
-        selectedCsvFile = file;
-
-        // Hiển thị tên file
-        fileNameElement.textContent =
-            file.name;
-            
-        console.log('Selected CSV:', file.name);
-        console.log('File size:', file.size);
-        console.log('File type:', file.type);
+    let selectedCsvFile = null;
+    function validateCsvFile() {
+      const fileInput = document.getElementById(
+        '{!$Component.mainForm.csvFileInput}'
+    );
+    const errorElement = document.getElementById('fileError');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+      errorElement.textContent = 'Please select a CSV file.';
+      errorElement.style.display = 'block';
+      return false;
     }
-</script>
+    return true;
+  }
+  function handleCsvFile(input) {
+    const fileNameElement =
+    document.getElementById('selectedFileName');
+    const errorElement =
+    document.getElementById('fileError');
+
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    if (!input.files || input.files.length === 0) {
+      selectedCsvFile = null;
+      fileNameElement.textContent = 'No file selected';
+      return;
+    }
+    const file = input.files[0];
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      selectedCsvFile = null;
+      fileNameElement.textContent = 'No file selected';
+      errorElement.textContent =
+       'Please select a CSV file.';
+      errorElement.style.display = 'block';
+      input.value = '';
+      return;
+    }
+    selectedCsvFile = file;
+    fileNameElement.textContent = file.name;
+  }
+  </script>
+
 <style>
     /* ================================
        Mass Import - Choose File Button

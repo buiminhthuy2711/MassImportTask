@@ -41,10 +41,12 @@ public with sharing class JIP_ProjectTaskController {
   // Mass import
   public Boolean showMassImportModal { get; set; }
   public Boolean showMassImportConfirmModal { get; set; }
-  // public Blob importFileBody { get; set; }
-  // public String importFileName { get; set; }
-  // public Id uploadedContentVersionId { get; set; }
-  // public String uploadedFileName { get; set; }
+  public Blob importFileBody { get; set; }
+  public String importFileName { get; set; }
+  public Id uploadedContentVersionId { get; set; }
+  public String uploadedFileName { get; set; }
+  public String selectedFileName { get; set; }
+
   // Language support
   public String getLanguage() {
     if (selectedProjectId == null) {
@@ -75,6 +77,7 @@ public with sharing class JIP_ProjectTaskController {
     filterMilestone = '';
     filterKeyword = '';
     showModal = false;
+    showMassImportModal = false;
     showMassImportModal = false;
     isEditMode = false;
 
@@ -397,10 +400,13 @@ public with sharing class JIP_ProjectTaskController {
 
   public void closeMassImportModal() {
     showMassImportModal = false;
+     importFileBody = null;
+     importFileName = null;
   }
   
   public void openMassImportModal() {
     showMassImportModal = true;
+    showMassImportConfirmModal = false;
   }
   
   public void closeMassImportConfirmModal() {
@@ -408,39 +414,59 @@ public with sharing class JIP_ProjectTaskController {
   }
 
   public void openMassImportConfirmModal() {
-     showMassImportConfirmModal = true;
-    // if (selectedProjectId == null) {
-    //   addError('Vui lòng chọn dự án.');
-    //   return;
-    // }
-    // if (importFileBody == null || String.isBlank(importFileName)) {
-    //   addError('Vui lòng chọn tệp CSV');
-    //   return;
-    // }
-    // if (!importFileName.toLowerCase().endsWith('.csv')) {
-    //   addError('Chỉ có thể tải lên tệp CSV');
-    //   return;
-    // }
-    // try {
-    //   ContentVersion cv = new ContentVersion();
-    //   cv.Title = importFileName;
-    //   cv.PathOnClient = importFileName;
-    //   cv.VersionData = importFileBody;
-    //   insert cv;
 
-    //   uploadedContentVersionId = cv.Id;
-    //   uploadedFileName = importFileName;
-    //   showMassImportModal = false;
-    //   showMassImportConfirmModal = true;
-    // }
-    // catch (Exception e) {
-    //   addError('Tải tệp thất bại :' + e.getMessage());
-    // }
-
-
+    if (selectedProjectId == null) {
+      addError('Vui lòng chọn dự án.');
+      return;
+    }
+    if (importFileBody == null || String.isBlank(importFileName)) {
+      addError('Vui lòng chọn tệp CSV');
+      return;
+    }
+    if (!importFileName.toLowerCase().endsWith('.csv')) {
+      addError('Chỉ có thể tải lên tệp CSV');
+      return;
+    }
+    try { // Lưu file
+      ContentVersion cv = new ContentVersion();
+      cv.Title = importFileName;
+      cv.PathOnClient = importFileName;
+      cv.VersionData = importFileBody;
+      insert cv;
+      uploadedContentVersionId = cv.Id;
+      uploadedFileName = importFileName;
+      showMassImportConfirmModal = true;
+    }
+    catch (Exception e) {
+      addError('Tải tệp thất bại :' + e.getMessage());
+    }
   }
 
   public void importTasks() {
-    loadTasks();
+    if (importFileBody == null) {
+    addError('Import file was not found.');
+    return;
   }
+  try {
+    String userEmail = UserInfo.getUserEmail();
+    System.enqueueJob(
+      new JIP_ProjectTaskImportQueueable(
+        uploadedContentVersionId,
+        selectedProjectId,
+        userEmail,
+        uploadedFileName
+      )
+    );
+    showMassImportConfirmModal = false;
+    showMassImportModal = false;
+
+    importFileBody = null;
+    importFileName = null;
+    addSuccess(
+      'Import has started. You will receive an email when processing is complete.'
+    );
+  } catch (Exception e) {
+    addError('Import failed: ' + e.getMessage());
+  }
+}
 }
