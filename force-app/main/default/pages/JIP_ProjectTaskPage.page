@@ -406,7 +406,7 @@
     }
 
     /* Messages */
-    .pt-messages {
+    .dt-messages {
       padding: 0 1.5rem;
     }
 
@@ -940,8 +940,8 @@
         </div>
 
         <!-- Messages -->
-        <div class="pt-messages">
-          <apex:messages id="pageMessages" layout="list" />
+        <div class="t-messages">
+          <apex:messages layout="list" />
         </div>
 
         <!-- Task Table -->
@@ -1744,6 +1744,12 @@
         margin-bottom: 8px;
         font-size: 14px;
         font-weight: 600;
+    }
+</style>
+<style>
+    .slds-vf-messages {
+        background: #2baf6a !important;
+        color: #ffffff !important;
     }
 </style>
 </apex:page>
