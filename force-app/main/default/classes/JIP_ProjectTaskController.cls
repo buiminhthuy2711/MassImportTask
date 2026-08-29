@@ -400,8 +400,8 @@ public with sharing class JIP_ProjectTaskController {
 
   public void closeMassImportModal() {
     showMassImportModal = false;
-     importFileBody = null;
-     importFileName = null;
+    importFileBody = null;
+    importFileName = null;
   }
   
   public void openMassImportModal() {
@@ -427,18 +427,20 @@ public with sharing class JIP_ProjectTaskController {
       addError('Chỉ có thể tải lên tệp CSV');
       return;
     }
-    try { // Lưu file
-      ContentVersion cv = new ContentVersion();
-      cv.Title = importFileName;
-      cv.PathOnClient = importFileName;
-      cv.VersionData = importFileBody;
-      insert cv;
-      uploadedContentVersionId = cv.Id;
-      uploadedFileName = importFileName;
-      showMassImportConfirmModal = true;
-    }
-    catch (Exception e) {
-      addError('Tải tệp thất bại :' + e.getMessage());
+    if (selectedProjectId != null ) {
+      try { // Lưu file
+        ContentVersion cv = new ContentVersion();
+        cv.Title = importFileName;
+        cv.PathOnClient = importFileName;
+        cv.VersionData = importFileBody;
+        insert cv;
+        uploadedContentVersionId = cv.Id;
+        uploadedFileName = importFileName;
+        showMassImportConfirmModal = true;
+      }
+      catch (Exception e) {
+        addError('Tải tệp thất bại :' + e.getMessage());
+      }
     }
   }
 

@@ -1267,7 +1267,6 @@
               <div class="file-upload-row">
                 <button
                   type="button"
-                  class="btn-file-select"
                   onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
                   Choose File
                 </button> 
@@ -1276,6 +1275,7 @@
                   id="csvFileInput"
                   value="{!importFileBody}"
                   filename="{!importFileName}"
+                  accept=".csv"
                   style="display:none;"
                   onchange="handleCsvFile(this)"
                   />
@@ -1284,9 +1284,8 @@
                   </span>  
               </div>
               <div id="fileError"
-                   class="mass-import-error"
                    style="display:none;">
-                  </div>
+              </div>
             </div>
           </div>
           <div class = "modal-footer">
@@ -1311,7 +1310,7 @@
       <div class = "modal-overlay">
         <div class = "modal-box">
           <div class = "modal-header">
-            <h2>confirm_import</h2>
+            <h2>{!T['confirm_import']}</h2>
           </div>
           <div class = "modal-body">
             <span>
@@ -1687,69 +1686,4 @@
   }
   </script>
 
-<style>
-    /* ================================
-       Mass Import - Choose File Button
-       ================================ */
-
-    .btn-file-select {
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-
-        min-width: 110px;
-        height: 38px;
-
-        padding: 0 18px;
-
-        background-color: #2eaf6d !important;
-        color: #ffffff !important;
-
-        border: 1px solid #24935a !important;
-        border-radius: 5px !important;
-
-        cursor: pointer;
-
-        font-size: 14px;
-        font-weight: 600;
-
-        box-sizing: border-box;
-        text-align: center;
-
-        transition: background-color 0.15s ease;
-    }
-
-    .btn-file-select:hover {
-        background-color: #24935a !important;
-    }
-
-    .btn-file-select:active {
-        background-color: #1f7f4d !important;
-    }
-
-    .file-upload-row {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        margin-top: 8px;
-    }
-
-    #selectedFileName {
-        color: #555;
-        font-size: 14px;
-    }
-
-    .mass-import-label {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 14px;
-        font-weight: 600;
-    }
-</style>
-<style>
-    .slds-vf-messages {
-        background: #2baf6a !important;
-        color: #ffffff !important;
-    }
-</style>
 </apex:page>
