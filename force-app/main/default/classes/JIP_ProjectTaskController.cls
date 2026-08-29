@@ -400,8 +400,8 @@ public with sharing class JIP_ProjectTaskController {
 
   public void closeMassImportModal() {
     showMassImportModal = false;
-     importFileBody = null;
-     importFileName = null;
+    importFileBody = null;
+    importFileName = null;
   }
   
   public void openMassImportModal() {
