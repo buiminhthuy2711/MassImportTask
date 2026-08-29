@@ -464,9 +464,6 @@ public with sharing class JIP_ProjectTaskController {
 
     importFileBody = null;
     importFileName = null;
-    addSuccess(
-      'Import has started. You will receive an email when processing is complete.'
-    );
   } catch (Exception e) {
     addError('Import failed: ' + e.getMessage());
   }
