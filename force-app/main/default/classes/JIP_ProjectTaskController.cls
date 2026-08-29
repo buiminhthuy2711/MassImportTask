@@ -427,20 +427,18 @@ public with sharing class JIP_ProjectTaskController {
       addError('Chỉ có thể tải lên tệp CSV');
       return;
     }
-    if (selectedProjectId != null ) {
-      try { // Lưu file
-        ContentVersion cv = new ContentVersion();
-        cv.Title = importFileName;
-        cv.PathOnClient = importFileName;
-        cv.VersionData = importFileBody;
-        insert cv;
-        uploadedContentVersionId = cv.Id;
-        uploadedFileName = importFileName;
-        showMassImportConfirmModal = true;
-      }
-      catch (Exception e) {
-        addError('Tải tệp thất bại :' + e.getMessage());
-      }
+    try { // Lưu file
+      ContentVersion cv = new ContentVersion();
+      cv.Title = importFileName;
+      cv.PathOnClient = importFileName;
+      cv.VersionData = importFileBody;
+      insert cv;
+      uploadedContentVersionId = cv.Id;
+      uploadedFileName = importFileName;
+      showMassImportConfirmModal = true;
+    }
+    catch (Exception e) {
+      addError('Tải tệp thất bại :' + e.getMessage());
     }
   }
 
@@ -464,6 +462,9 @@ public with sharing class JIP_ProjectTaskController {
 
     importFileBody = null;
     importFileName = null;
+    addSuccess(
+      'Import has started. You will receive an email when processing is complete.'
+    );
   } catch (Exception e) {
     addError('Import failed: ' + e.getMessage());
   }
