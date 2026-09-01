@@ -652,7 +652,7 @@
             - {!T['task_list']}
           </h1>
           <div class="action-btns">
-            <apex:commandButton value="+ Mass Import Tasks"
+            <apex:commandButton value="+ {!T['mass_import_tasks']}"
               action="{!openMassImportModal}"
               reRender="mainForm"
               styleClass="btn-action"
