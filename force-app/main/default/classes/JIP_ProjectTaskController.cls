@@ -443,7 +443,8 @@ public with sharing class JIP_ProjectTaskController {
   }
 
   public void importTasks() {
-    if (importFileBody == null) {
+    // if (importFileBody == null) 
+    if (uploadedContentVersionId == null) {
     addError('Import file was not found.');
     return;
   }
@@ -453,7 +454,8 @@ public with sharing class JIP_ProjectTaskController {
       new JIP_ProjectTaskImportQueueable(
         uploadedContentVersionId,
         selectedProjectId,
-        userEmail,
+        UserInfo.getName(),
+        UserInfo.getUserEmail(),
         uploadedFileName
       )
     );
