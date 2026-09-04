@@ -1,56 +1,186 @@
-// public with sharing class JIP_ProjectTaskImportQueueable implements Queueable{
+public with sharing class JIP_ProjectTaskImportQueueable implements Queueable{
+    private static final Integer DML_BATCH_SIZE = 200;
+    private static final Integer MAX_EMAIL_ERRORS = 50;
+
+    private Id contentVersionId;
+    private Id projectId;
+    private String userEmail;
+    private String fileName;
+    private String registeredByName;
+
+    public JIP_ProjectTaskImportQueueable(
+         Id contentVersionId,
+         Id projectId,
+         String registeredByName,
+         String userEmail,
+         String fileName
+    )
+    {
+        this.contentVersionId = contentVersionId;
+        this.projectId = projectId;
+        this.registeredByName = registeredByName;
+        this.userEmail = userEmail;
+        this.fileName = fileName;
+    }
+    public void execute(QueueableContext context) {
+        try {
+            // Lấy file CSV
+            ContentVersion cv = [
+                SELECT Id, Title, VersionData
+                FROM ContentVersion
+                WHERE Id = :contentVersionId
+                LIMIT 1
+            ];
+            // Xử lý CSV và insert Task ở đây
+            // Nếu xử lý thành công
+            sendSuccessEmail();
+        } catch (Exception e) {
+        sendErrorEmail(e.getMessage());
+    } 
+    }
+    private void sendSuccessEmail() {
+        String projectUrl =
+        URL.getOrgDomainUrl().toExternalForm()
+        + '/lightning/r/JIP_Project__c/'
+        + projectId
+        + '/view';
+        Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+        email.setToAddresses(
+            new String[] { userEmail }
+        );
+        email.setSubject(
+            'CSV Import Completed Successfully');
+
+        email.setPlainTextBody(
+            'Hello ' + registeredByName + ',\n\n' +
+            'Your CSV import has completed successfully.\n\n' +
+            'File: ' + fileName + '\n\n' +
+            projectUrl + '\n\n' +
+            'Thank you.'
+        );
+        Messaging.sendEmail(
+            new Messaging.SingleEmailMessage[] { email }
+        );
+    }
+
+        private void sendErrorEmail(String errorMessage) {
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setToAddresses(
+                new String[] { userEmail }
+            );
+            email.setSubject(
+                'CSV Import Failed');
+
+            email.setPlainTextBody(
+            'Hello ' + registeredByName + ',\n\n' +
+            'Your CSV import failed.\n\n' +
+            'File: ' + fileName + '\n\n' +
+            'Error: ' + errorMessage 
+            );
+            Messaging.sendEmail(
+                new Messaging.SingleEmailMessage[] { email }
+            );
+        }
+}
+
+//  * @see https://www.jip-academy.com/
+//  */
+// public with sharing class JIP_ProjectTaskImportQueueable
+//     implements Queueable {
+
 //     private static final Integer DML_BATCH_SIZE = 200;
 //     private static final Integer MAX_EMAIL_ERRORS = 50;
 
 //     private Id contentVersionId;
 //     private Id projectId;
+//     private String registeredByName;
 //     private String userEmail;
 //     private String fileName;
-//     private String registeredByName;
 
 //     public JIP_ProjectTaskImportQueueable(
-//          Id contentVersionId,
-//          Id projectId,
-//          String registeredByName,
-//          String userEmail,
-//          String fileName
-//     )
-//     {
+//         Id contentVersionId,
+//         Id projectId,
+//         String registeredByName,
+//         String userEmail,
+//         String fileName
+//     ) {
+
 //         this.contentVersionId = contentVersionId;
+
 //         this.projectId = projectId;
+
 //         this.registeredByName = registeredByName;
+
 //         this.userEmail = userEmail;
+
 //         this.fileName = fileName;
 //     }
-//     public void execute(QueueableContext context) {
+
+//     // Execute
+
+//     public void execute(
+//         QueueableContext context
+//     ) {
+
 //         Integer totalCount = 0;
 //         Integer successCount = 0;
 //         Integer errorCount = 0;
-//         List<String> errorMessages = new List<String>();
+
+//         List<String> errorMessages =
+//             new List<String>();
+
 
 //         try {
+//             // 1. Get ContentVersion
 //             ContentVersion cv = [
-//                 SELECT Id, VersionData
+//                 SELECT
+//                     Id,
+//                     VersionData
 //                 FROM ContentVersion
 //                 WHERE Id = :contentVersionId
 //                 WITH USER_MODE
 //                 LIMIT 1
 //             ];
-//             if (cvList.isEmpty()) {
-//                 sendResultEmail(0, 0, 0,'The uploaded CSV file is empty.');
+
+//             if (cv.VersionData == null) {
+//                 sendResultEmail(
+//                     0,
+//                     0,
+//                     0,
+//                     'The uploaded CSV file is empty.'
+//                 );
 //                 return;
 //             }
-//             String csvContent = cv.VersionData.toString();
+
+//             String csvContent =
+//                 cv.VersionData.toString();
 //             if (String.isBlank(csvContent)) {
-//                 sendResultEmail(0,0,0, 'The uploaded CSV file is empty.');
+//                 sendResultEmail(
+//                     0,
+//                     0,
+//                     0,
+//                     'The uploaded CSV file is empty.'
+//                 );
+
 //                 return;
 //             }
-//             List<List<String>> records = parseCsv(csvContent);
+
+
+//             // =================================================
+//             // 2. Parse complete CSV
+//             // =================================================
+//             //
+//             // Do NOT use:
+//             //
+//             // csvContent.split('\n')
+//             //
+//             // because a quoted CSV field may contain newline.
+//             //
+//             List<List<String>> records =
+//                 parseCsv(csvContent);
+
+
 //             if (records.isEmpty()) {
-//                 sendResultEmail(0,0,0, 'The CSV file does not contain any data.');
-//                 return;
-//             }
-//             if (records.size() == 1) {
 
 //                 sendResultEmail(
 //                     0,
@@ -61,261 +191,145 @@
 
 //                 return;
 //             }
-         /**
- * Copyright (c) 2023-2026 JIP Academy (Tokyo, Japan).
- * Developed by JIP Academy R&D Team / Nguyen Minh Phuong.
- * All rights reserved.
- *
- * Unauthorized copying, modification, distribution, or use of this source code,
- * in whole or in part, is strictly prohibited without prior written permission.
- *
- * @see https://www.jip-academy.com/
- */
-public with sharing class JIP_ProjectTaskImportQueueable
-    implements Queueable {
 
-    private static final Integer DML_BATCH_SIZE = 200;
-    private static final Integer MAX_EMAIL_ERRORS = 50;
+//             if (records.size() == 1) {
+//                 sendResultEmail(
+//                     0,
+//                     0,
+//                     0,
+//                     'The CSV file does not contain any data.'
+//                 );
+//                 return;
+//             }
 
-    private Id contentVersionId;
-    private Id projectId;
-    private String registeredByName;
-    private String userEmail;
-    private String fileName;
+//             // 3. Header
+//             List<String> headers =
+//                 records[0];
+//             Map<String, Integer> headerIndexMap =
+//                 buildHeaderIndex(headers);
+//             // 4. Validate required headers
+//             validateRequiredHeaders(
+//                 headerIndexMap
+//             );
 
-    public JIP_ProjectTaskImportQueueable(
-        Id contentVersionId,
-        Id projectId,
-        String registeredByName,
-        String userEmail,
-        String fileName
-    ) {
+//             // 5. Parse rows
+//             List<ImportRow> taskBuffer =
+//                 new List<ImportRow>();
 
-        this.contentVersionId = contentVersionId;
+//             for (
+//                 Integer rowIndex = 1;
+//                 rowIndex < records.size();
+//                 rowIndex++
+//             ) {
 
-        this.projectId = projectId;
+//                 List<String> values =
+//                     records[rowIndex];
 
-        this.registeredByName = registeredByName;
+//                 // Skip completely empty row
+//                 if (isEmptyRow(values)) {
+//                     continue;
+//                 }
 
-        this.userEmail = userEmail;
+//                 /*
+//                  * CSV row number:
+//                  * Header = row 1
+//                  * First data = row 2
+//                  */
+//                 Integer csvRowNumber =
+//                     rowIndex + 1;
+//                 totalCount++;
+//                 try {
 
-        this.fileName = fileName;
-    }
+//                     JIP_ProjectTask__c task =
+//                         buildTask(
+//                             values,
+//                             headerIndexMap,
+//                             csvRowNumber
+//                         );
+//                     taskBuffer.add(
+//                         new ImportRow(
+//                             csvRowNumber,
+//                             task
+//                         )
+//                     );
 
-    // Execute
+//                 } catch (Exception e) {
+//                     errorCount++;
+//                     addErrorMessage(
+//                         errorMessages,
+//                         'Row ' +
+//                         String.valueOf(csvRowNumber) +
+//                         ': ' +
+//                         e.getMessage()
+//                     );
+//                 }
 
-    public void execute(
-        QueueableContext context
-    ) {
+//                 // Insert every 200 records
+//                 if (
+//                     taskBuffer.size() >=
+//                     DML_BATCH_SIZE
+//                 ) {
 
-        Integer totalCount = 0;
-        Integer successCount = 0;
-        Integer errorCount = 0;
-
-        List<String> errorMessages =
-            new List<String>();
-
-
-        try {
-            // 1. Get ContentVersion
-            ContentVersion cv = [
-                SELECT
-                    Id,
-                    VersionData
-                FROM ContentVersion
-                WHERE Id = :contentVersionId
-                WITH USER_MODE
-                LIMIT 1
-            ];
-
-            if (cv.VersionData == null) {
-                sendResultEmail(
-                    0,
-                    0,
-                    0,
-                    'The uploaded CSV file is empty.'
-                );
-                return;
-            }
-
-            String csvContent =
-                cv.VersionData.toString();
-            if (String.isBlank(csvContent)) {
-                sendResultEmail(
-                    0,
-                    0,
-                    0,
-                    'The uploaded CSV file is empty.'
-                );
-
-                return;
-            }
+//                     ImportResult result =
+//                         insertTasks(
+//                             taskBuffer,
+//                             errorMessages
+//                         );
 
 
-            // =================================================
-            // 2. Parse complete CSV
-            // =================================================
-            //
-            // Do NOT use:
-            //
-            // csvContent.split('\n')
-            //
-            // because a quoted CSV field may contain newline.
-            //
-            List<List<String>> records =
-                parseCsv(csvContent);
+//                     successCount +=
+//                         result.successCount;
+
+//                     errorCount +=
+//                         result.errorCount;
 
 
-            if (records.isEmpty()) {
-
-                sendResultEmail(
-                    0,
-                    0,
-                    0,
-                    'The CSV file does not contain any data.'
-                );
-
-                return;
-            }
-
-            if (records.size() == 1) {
-                sendResultEmail(
-                    0,
-                    0,
-                    0,
-                    'The CSV file does not contain any data.'
-                );
-                return;
-            }
-
-            // 3. Header
-            List<String> headers =
-                records[0];
-            Map<String, Integer> headerIndexMap =
-                buildHeaderIndex(headers);
-            // 4. Validate required headers
-            validateRequiredHeaders(
-                headerIndexMap
-            );
-
-            // 5. Parse rows
-            List<ImportRow> taskBuffer =
-                new List<ImportRow>();
-
-            for (
-                Integer rowIndex = 1;
-                rowIndex < records.size();
-                rowIndex++
-            ) {
-
-                List<String> values =
-                    records[rowIndex];
-
-                // Skip completely empty row
-                if (isEmptyRow(values)) {
-                    continue;
-                }
-
-                /*
-                 * CSV row number:
-                 * Header = row 1
-                 * First data = row 2
-                 */
-                Integer csvRowNumber =
-                    rowIndex + 1;
-                totalCount++;
-                try {
-
-                    JIP_ProjectTask__c task =
-                        buildTask(
-                            values,
-                            headerIndexMap,
-                            csvRowNumber
-                        );
-                    taskBuffer.add(
-                        new ImportRow(
-                            csvRowNumber,
-                            task
-                        )
-                    );
-
-                } catch (Exception e) {
-                    errorCount++;
-                    addErrorMessage(
-                        errorMessages,
-                        'Row ' +
-                        String.valueOf(csvRowNumber) +
-                        ': ' +
-                        e.getMessage()
-                    );
-                }
-
-                // Insert every 200 records
-                if (
-                    taskBuffer.size() >=
-                    DML_BATCH_SIZE
-                ) {
-
-                    ImportResult result =
-                        insertTasks(
-                            taskBuffer,
-                            errorMessages
-                        );
+//                     taskBuffer.clear();
+//                 }
+//             }
 
 
-                    successCount +=
-                        result.successCount;
+//             // 6. Insert remaining records
+//             if (!taskBuffer.isEmpty()) {
 
-                    errorCount +=
-                        result.errorCount;
+//                 ImportResult result =
+//                     insertTasks(
+//                         taskBuffer,
+//                         errorMessages
+//                     );
+//                 successCount +=
+//                     result.successCount;
 
+//                 errorCount +=
+//                     result.errorCount;
+//             }
 
-                    taskBuffer.clear();
-                }
-            }
-
-
-            // 6. Insert remaining records
-            if (!taskBuffer.isEmpty()) {
-
-                ImportResult result =
-                    insertTasks(
-                        taskBuffer,
-                        errorMessages
-                    );
-                successCount +=
-                    result.successCount;
-
-                errorCount +=
-                    result.errorCount;
-            }
-
-            // 7. Send result email
-            sendResultEmail(
-                totalCount,
-                successCount,
-                errorCount,
-                buildErrorMessage(
-                    errorMessages
-                )
-            );
+//             // 7. Send result email
+//             sendResultEmail(
+//                 totalCount,
+//                 successCount,
+//                 errorCount,
+//                 buildErrorMessage(
+//                     errorMessages
+//                 )
+//             );
 
 
-        } catch (Exception e) {
-            sendResultEmail(
-                totalCount,
-                successCount,
-                errorCount,
-                'System Error: ' +
-                e.getMessage()
-            );
-        }
-    }
+//         } catch (Exception e) {
+//             sendResultEmail(
+//                 totalCount,
+//                 successCount,
+//                 errorCount,
+//                 'System Error: ' +
+//                 e.getMessage()
+//             );
+//         }
+//     }
 
 
-    // =========================================================
-    // Build Task
-    // =========================================================
+//     // =========================================================
+//     // Build Task
+//     // =========================================================
 
 //     private JIP_ProjectTask__c buildTask(
 //         List<String> values,
@@ -384,10 +398,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 'category'
 //             );
 
-
-//         // -----------------------------------------------------
 //         // Priority
-//         // -----------------------------------------------------
 //         task.Priority__c =
 //             getValue(
 //                 values,
@@ -395,10 +406,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 'priority'
 //             );
 
-
-//         // -----------------------------------------------------
 //         // Milestone
-//         // -----------------------------------------------------
 //         task.Milestone__c =
 //             getValue(
 //                 values,
@@ -406,10 +414,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 'milestone'
 //             );
 
-
-//         // -----------------------------------------------------
 //         // Description
-//         // -----------------------------------------------------
 //         task.Description__c =
 //             getValue(
 //                 values,
@@ -417,10 +422,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 'description'
 //             );
 
-
-//         // -----------------------------------------------------
 //         // Start Date
-//         // -----------------------------------------------------
 //         String startDateValue =
 //             getValue(
 //                 values,
@@ -441,17 +443,13 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 );
 //         }
 
-
-//         // -----------------------------------------------------
 //         // Due Date
-//         // -----------------------------------------------------
 //         String dueDateValue =
 //             getValue(
 //                 values,
 //                 headerIndexMap,
 //                 'duedate'
 //             );
-
 
 //         if (
 //             String.isNotBlank(
@@ -466,9 +464,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //         }
 
 
-//         // -----------------------------------------------------
 //         // Estimated Hours
-//         // -----------------------------------------------------
 //         String estimatedHours =
 //             getValue(
 //                 values,
@@ -504,9 +500,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //     }
 
 
-//     // =========================================================
 //     // Insert Tasks
-//     // =========================================================
 
 //     private ImportResult insertTasks(
 //         List<ImportRow> rows,
@@ -556,7 +550,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             ImportRow row =
 //                 rows[i];
 
-
 //             if (
 //                 resultItem.isSuccess()
 //             ) {
@@ -588,7 +581,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                         ' ';
 //                 }
 
-
 //                 addErrorMessage(
 //                     errorMessages,
 //                     errorMessage
@@ -600,10 +592,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //         return result;
 //     }
 
-
-//     // =========================================================
 //     // Header
-//     // =========================================================
 
 //     private static Map<String, Integer>
 //     buildHeaderIndex(
@@ -612,7 +601,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 
 //         Map<String, Integer> result =
 //             new Map<String, Integer>();
-
 
 //         for (
 //             Integer i = 0;
@@ -628,7 +616,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 
 //             /*
 //              * Remove UTF-8 BOM if present.
-//              *
 //              * Some CSV files exported by Excel
 //              * may contain BOM at the first header.
 //              */
@@ -647,18 +634,14 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             ) {
 //                 continue;
 //             }
-
-
 //             result.put(
 //                 header,
 //                 i
 //             );
 //         }
 
-
 //         return result;
 //     }
-
 
 //     private static void validateRequiredHeaders(
 //         Map<String, Integer> headerIndexMap
@@ -668,7 +651,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             new List<String>{
 //                 'subject'
 //             };
-
 
 //         for (
 //             String header :
@@ -689,10 +671,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //         }
 //     }
 
-
-//     // =========================================================
 //     // CSV value
-//     // =========================================================
 
 //     private static String getValue(
 //         List<String> values,
@@ -709,12 +688,10 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             return null;
 //         }
 
-
 //         Integer index =
 //             headerIndexMap.get(
 //                 headerName
 //             );
-
 
 //         if (
 //             index == null ||
@@ -724,7 +701,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             return null;
 //         }
 
-
 //         if (
 //             values[index] == null
 //         ) {
@@ -732,10 +708,8 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             return null;
 //         }
 
-
 //         return values[index].trim();
 //     }
-
 
 //     private static String getRequiredValue(
 //         List<String> values,
@@ -750,7 +724,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 headerName
 //             );
 
-
 //         if (
 //             String.isBlank(value)
 //         ) {
@@ -762,14 +735,11 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //             );
 //         }
 
-
 //         return value;
 //     }
 
 
-//     // =========================================================
 //     // Date
-//     // =========================================================
 
 //     private static Date parseDate(String value) {
 
@@ -784,10 +754,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //         }
 //     }
 
-
-//     // =========================================================
 //     // CSV Parser
-//     // =========================================================
 
 //     /**
 //      * CSV parser supporting:
@@ -803,19 +770,13 @@ public with sharing class JIP_ProjectTaskImportQueueable
 
 //         List<List<String>> records =
 //             new List<List<String>>();
-
-
 //         List<String> currentRecord =
 //             new List<String>();
-
-
 //         String currentValue =
 //             '';
 
-
 //         Boolean insideQuotes =
 //             false;
-
 
 //         for (
 //             Integer i = 0;
@@ -829,16 +790,11 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                     i + 1
 //                 );
 
-
-//             // -------------------------------------------------
 //             // Quote
-//             // -------------------------------------------------
 //             if (ch == '"') {
-
 
 //                 /*
 //                  * Escaped quote:
-//                  *
 //                  * ""
 //                  */
 //                 if (
@@ -851,19 +807,14 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 ) {
 
 //                     currentValue += '"';
-
 //                     i++;
-
 //                 } else {
 
 //                     insideQuotes =
 //                         !insideQuotes;
 //                 }
 
-
-//             // -------------------------------------------------
 //             // Comma
-//             // -------------------------------------------------
 //             } else if (
 //                 ch == ',' &&
 //                 !insideQuotes
@@ -875,10 +826,7 @@ public with sharing class JIP_ProjectTaskImportQueueable
 
 //                 currentValue = '';
 
-
-//             // -------------------------------------------------
 //             // Newline
-//             // -------------------------------------------------
 //             } else if (
 //                 (
 //                     ch == '\n' ||
@@ -886,7 +834,6 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 ) &&
 //                 !insideQuotes
 //             ) {
-
 
 //                 /*
 //                  * Handle Windows CRLF:
@@ -905,14 +852,11 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                     i++;
 //                 }
 
-
 //                 currentRecord.add(
 //                     currentValue
 //                 );
 
 //                 currentValue = '';
-
-
 //                 records.add(
 //                     currentRecord
 //                 );
@@ -921,10 +865,8 @@ public with sharing class JIP_ProjectTaskImportQueueable
 //                 currentRecord =
 //                     new List<String>();
 
-
-//             // -------------------------------------------------
 //             // Normal character
-//             // -------------------------------------------------
+
 //             } else {
 
 //                 currentValue += ch;
