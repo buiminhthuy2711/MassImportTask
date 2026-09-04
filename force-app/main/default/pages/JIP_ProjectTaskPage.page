@@ -652,7 +652,7 @@
             - {!T['task_list']}
           </h1>
           <div class="action-btns">
-            <apex:commandButton value="+ !{!T['mass_import_tasks']}"
+            <apex:commandButton value="+ {!T['mass_import_tasks']}"
               action="{!openMassImportModal}"
               reRender="mainForm"
               styleClass="btn-action"
@@ -1324,6 +1324,30 @@
             />
             <apex:commandButton value="{!T['confirm']}"
               action="{!importTasks}"
+              styleClass="btn-modal btn-modal-save"
+            />
+          </div>
+        </div>
+      </div>
+     </apex:outputPanel>
+
+     <!-- Mass import started modal -->
+     <apex:outputPanel id="massImportStarted" 
+        rendered="{!showMassImportStartedModal}"
+      >
+      <div class = "modal-overlay">
+        <div class = "modal-box">
+          <div class = "modal-header">
+            <h2>{!T['mass_import_tasks']}</h2>
+          </div>
+          <div class = "modal-body">
+            <span>
+              Import has started. You will receive an email when processing is complete.
+            </span> 
+          </div>
+          <div class = "modal-footer">
+            <apex:commandButton value="{!T['close']}"
+              action="{!closeMassImportStartedModal}"
               styleClass="btn-modal btn-modal-save"
             />
           </div>

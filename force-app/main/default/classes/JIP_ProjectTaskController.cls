@@ -46,6 +46,7 @@ public with sharing class JIP_ProjectTaskController {
   public Id uploadedContentVersionId { get; set; }
   public String uploadedFileName { get; set; }
   public String selectedFileName { get; set; }
+  public Boolean showMassImportStartedModal { get; set; }
 
   // Language support
   public String getLanguage() {
@@ -413,6 +414,10 @@ public with sharing class JIP_ProjectTaskController {
     showMassImportConfirmModal = false;
   }
 
+  public void closeMassImportStartedModal() {
+    showMassImportStartedModal = false;
+  }
+
   public void openMassImportConfirmModal() {
 
     if (selectedProjectId == null) {
@@ -459,12 +464,13 @@ public with sharing class JIP_ProjectTaskController {
     );
     showMassImportConfirmModal = false;
     showMassImportModal = false;
+    showMassImportStartedModal = true;
 
     importFileBody = null;
     importFileName = null;
-    addSuccess(
-      'Import has started. You will receive an email when processing is complete.'
-    );
+    // addSuccess(
+    //   'Import has started. You will receive an email when processing is complete.'
+    // );
   } catch (Exception e) {
     addError('Import failed: ' + e.getMessage());
   }
