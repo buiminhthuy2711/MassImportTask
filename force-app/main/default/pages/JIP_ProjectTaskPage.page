@@ -1304,7 +1304,7 @@
      </apex:outputPanel>
 
     <!-- Mass Import Confirm Modal -->
-    <apex:outputPanel id="massImportConfirm" 
+    <apex:outputPanel id="massImportConfirmModal" 
         rendered="{!showMassImportConfirmModal}"
      >
       <div class = "modal-overlay">
@@ -1332,7 +1332,7 @@
      </apex:outputPanel>
 
      <!-- Mass import started modal -->
-     <apex:outputPanel id="massImportStarted" 
+     <apex:outputPanel id="massImportStartedModal" 
         rendered="{!showMassImportStartedModal}"
       >
       <div class = "modal-overlay">
