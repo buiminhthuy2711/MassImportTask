@@ -22,7 +22,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Integer errorCount = 0;
         
         ContentVersion cv = [
-            SELECT Id, Title, VersionData 
+            SELECT Id, Title, VersionData, ContentDocumentId
             FROM ContentVersion 
             WHERE Id = :contentVersionId 
             LIMIT 1
@@ -93,14 +93,18 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                     }
                 }
             }
+
             // SEND EMAIL AFTER IMPORT
             sendImportSuccessEmail(
                 totalCount,
                 successCount,
                 errorCount
             );
+
+            deleteImportedCSV(cv);
         }
     }
+
     // SEND IMPORT SUCCESS EMAIL
     private void sendImportSuccessEmail(
         Integer totalCount,
@@ -166,4 +170,14 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             }
         );
     } 
+
+    // Delete CSV after import
+    private void deleteImportedCSV(ContentVersion cv) {
+        if (cv != null && cv.ContentDocumentId != null) {
+            delete new ContentDocument (
+                Id = cv.ContentDocumentId
+            );
+        }
+    }
+
 }
