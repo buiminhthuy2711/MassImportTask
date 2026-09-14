@@ -20,6 +20,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Integer totalCount = 0;
         Integer successCount = 0;
         Integer errorCount = 0;
+        List<String> errorMessages = new List<String>();
         
         ContentVersion cv = [
             SELECT Id, Title, VersionData, ContentDocumentId
@@ -76,31 +77,34 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 tasksToInsert.add(csvTask);
             }
 
-            // Insert the tasks and count successes and errors
-            Database.SaveResult[] results = Database.insert(tasksToInsert, false);
-            for (Database.SaveResult result : results) {
-                totalCount++;
-                System.debug('Insert Result: ' + result);
-                if (result.isSuccess()) {
+            // Count total tasks
+            totalCount = tasksToInsert.size();
+
+            try {
+                Database.SaveResult[] results = Database.insert(tasksToInsert, true);
+                for (Database.SaveResult result : results) {
                     successCount++;
-                    System.debug('Success: ' + successCount);
-                    System.debug('Task inserted successfully: ' + result.getId());
-                } else {
+                }
+            }
+            // Catch CSV Row, Task Name, and Error Message for each failed record
+            catch (DmlException e) {
+                for (Integer i = 0; i < e.getNumDml(); i++){
+                    Integer errorIndex = e.getDmlIndex(i);
+                    JIP_ProjectTask__c failedTask = tasksToInsert[errorIndex];
+                    String taskName = failedTask.Subject__c != null ? failedTask.Subject__c : 'Empty';
+                    String errorMessage = e.getDmlMessage(i);
+                    Integer csvRow = errorIndex + 2; // +2 to account for header row and 0-based index
+                    errorMessages.add('Row ' + csvRow + '\nTask Name: ' + taskName + '\nError: ' + errorMessage);
                     errorCount++;
-                    System.debug('Error: ' + errorCount);
-                    for (Database.Error error : result.getErrors()) {
-                        System.debug('Error inserting task: ' + error.getMessage());
-                    }
                 }
             }
 
             // SEND EMAIL AFTER IMPORT
-            sendImportSuccessEmail(
-                totalCount,
-                successCount,
-                errorCount
-            );
-
+            if (errorCount > 0) {
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+            } else {
+                sendImportSuccessEmail(totalCount, successCount);
+            }
             deleteImportedCSV(cv);
         }
     }
@@ -108,8 +112,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
     // SEND IMPORT SUCCESS EMAIL
     private void sendImportSuccessEmail(
         Integer totalCount,
-        Integer successCount,
-        Integer errorCount
+        Integer successCount
     ) {
 
         String baseUrl =
@@ -139,7 +142,8 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
 
         email.setPlainTextBody(
 
-            'CSV Import Completed Successfully.\n\n'
+            'CSV IMPORT SUCCESS\n\n'
+            +'Your CSV file has been imported successfully.\n\n'
 
             + 'File Name: '
             + fileName
@@ -152,10 +156,6 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             + 'Successfully Imported: '
             + successCount
             + '\n'
-
-            + 'Failed: '
-            + errorCount
-            + '\n\n'
 
             + 'Project Link:\n'
             + projectUrl
@@ -170,6 +170,72 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             }
         );
     } 
+
+    // SEND IMPORT ERROR EMAIL
+    private void sendImportErrorEmail(
+        Integer totalCount,
+        Integer errorCount,
+        List<String> errorMessages
+    ){
+        String baseUrl =
+            URL.getOrgDomainUrl().toExternalForm();
+
+        // Link tới Project
+        String projectUrl =
+            baseUrl
+            + '/lightning/r/JIP_Project__c/'
+            + projectId
+            + '/view';
+
+        // Link tới Task Management
+        String taskUrl =
+             baseUrl + '/lightning/n/JIP_TicketManagement';
+
+        Messaging.SingleEmailMessage email =
+            new Messaging.SingleEmailMessage();
+
+        email.setToAddresses(
+            new String[] { userEmail }
+        );
+
+        email.setSubject(
+            'CSV Import Completed with Errors'
+        );
+
+        email.setPlainTextBody(
+
+            'CSV IMPORT FAILED\n\n'
+            +'The CSV file could not be imported. No tasks were imported.\n\n'
+
+            + 'File Name: '
+            + fileName
+            + '\n\n'
+
+            + 'Total Tasks: '
+            + totalCount
+            + '\n'
+
+            + 'Failed Tasks: '
+            + errorCount
+            + '\n\n'
+
+            + 'Error Details:\n'
+            + String.join(errorMessages, '\n\n')
+            + '\n\n'
+
+            + 'Project Link:\n'
+            + projectUrl
+            + '\n\n'
+
+            + 'View Tasks:\n'
+            + taskUrl
+        );
+        Messaging.sendEmail(
+            new Messaging.SingleEmailMessage[] {
+                email
+            }
+        );
+    }
 
     // Delete CSV after import
     private void deleteImportedCSV(ContentVersion cv) {
