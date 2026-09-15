@@ -357,7 +357,7 @@ public with sharing class JIP_ProjectTaskController {
       soql += ' AND Subject__c LIKE :kwPattern';
     }
 
-    soql += ' ORDER BY CreatedDate DESC LIMIT 200';
+    soql += ' ORDER BY Name DESC LIMIT 200';
     taskList = Database.query(soql);
     taskCount = taskList.size();
 
