@@ -169,6 +169,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 email
             }
         );
+        System.debug('Success Email Sent to: ' + userEmail);
     } 
 
     // SEND IMPORT ERROR EMAIL
@@ -235,6 +236,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 email
             }
         );
+        System.debug('Error Email Sent to: ' + userEmail);
     }
 
     // Delete CSV after import
