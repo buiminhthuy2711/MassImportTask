@@ -1342,7 +1342,7 @@
           </div>
           <div class = "modal-body">
             <span>
-              Import has started. You will receive an email when processing is complete.
+              Import has started. You will receive an email when processing is completed.
             </span> 
           </div>
           <div class = "modal-footer">
