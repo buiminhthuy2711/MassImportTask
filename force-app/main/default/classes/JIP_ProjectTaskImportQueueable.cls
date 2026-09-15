@@ -155,11 +155,11 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
 
             + 'Successfully Imported: '
             + successCount
-            + '\n'
+            + '\n\n'
 
             + 'Project Link:\n'
             + projectUrl
-            + '\n\n'
+            + '\n'
 
             + 'View Tasks:\n'
             + taskUrl
@@ -225,7 +225,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
 
             + 'Project Link:\n'
             + projectUrl
-            + '\n\n'
+            + '\n'
 
             + 'View Tasks:\n'
             + taskUrl
