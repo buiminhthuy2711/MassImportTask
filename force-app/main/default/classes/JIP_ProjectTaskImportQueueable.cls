@@ -114,6 +114,8 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Integer totalCount,
         Integer successCount
     ) {
+        Messaging.SingleEmailMessage email =
+            new Messaging.SingleEmailMessage();
 
         String baseUrl =
             URL.getOrgDomainUrl().toExternalForm();
@@ -126,50 +128,37 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             + '/view';
 
         // Link tới Task Management
-        String taskUrl =
-             baseUrl + '/lightning/n/JIP_TicketManagement';
+        String tasksUrl =
+             baseUrl + '/lightning/n/JIP_TicketManagement'
+             +'?projectId='
+             + projectId;
 
-        Messaging.SingleEmailMessage email =
-            new Messaging.SingleEmailMessage();
-
+        // Create the email message
+        EmailTemplate template = [
+            SELECT Id, Subject, HtmlValue, Body
+            FROM EmailTemplate
+            WHERE DeveloperName = 'Mass_Import_Completion'
+            LIMIT 1
+        ];
+        string emailBody = template.HtmlValue;
+        emailBody = emailBody.replace('{{fileName}}', fileName);
+        emailBody = emailBody.replace('{{totalTasks}}', String.valueOf(totalCount));
+        emailBody = emailBody.replace('{{successfulImports}}', String.valueOf(successCount));
+        emailBody = emailBody.replace('{{projectUrl}}', projectUrl);
+        emailBody = emailBody.replace('{{tasksUrl}}', tasksUrl);
+        email.setHtmlBody(
+            emailBody
+        );
         email.setToAddresses(
             new String[] { userEmail }
         );
-
         email.setSubject(
-            'CSV Import Completed Successfully'
+            template.Subject
         );
-
-        email.setPlainTextBody(
-
-            'CSV IMPORT SUCCESS\n\n'
-            +'Your CSV file has been imported successfully.\n\n'
-
-            + 'File Name: '
-            + fileName
-            + '\n\n'
-
-            + 'Total Tasks: '
-            + totalCount
-            + '\n'
-
-            + 'Successfully Imported: '
-            + successCount
-            + '\n\n'
-
-            + 'Project Link:\n'
-            + projectUrl
-            + '\n'
-
-            + 'View Tasks:\n'
-            + taskUrl
+        
+        Messaging.SendEmailResult[] results = Messaging.sendEmail(
+            new Messaging.SingleEmailMessage[] { email }
         );
-        Messaging.sendEmail(
-            new Messaging.SingleEmailMessage[] {
-                email
-            }
-        );
-        System.debug('Success Email Sent to: ' + userEmail);
     } 
 
     // SEND IMPORT ERROR EMAIL
@@ -189,8 +178,10 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             + '/view';
 
         // Link tới Task Management
-        String taskUrl =
-             baseUrl + '/lightning/n/JIP_TicketManagement';
+        String tasksUrl =
+             baseUrl + '/lightning/n/JIP_TicketManagement'
+             +'?projectId='
+             + projectId;
 
         Messaging.SingleEmailMessage email =
             new Messaging.SingleEmailMessage();
@@ -199,44 +190,37 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             new String[] { userEmail }
         );
 
+       // Create the email message
+        EmailTemplate template = [
+            SELECT Id, Subject, HtmlValue, Body
+            FROM EmailTemplate
+            WHERE DeveloperName = 'Mass_Import_Error'
+            LIMIT 1
+        ];
+
+        String emailBody = template.HtmlValue;
+        String errorDetails = String.join(errorMessages, '<br><br>');
+        errorDetails = errorDetails.replace('\n', '<br>');
+        emailBody = emailBody.replace('{{fileName}}', fileName);
+        emailBody = emailBody.replace('{{totalTasks}}', String.valueOf(totalCount));
+        emailBody = emailBody.replace('{{failedImports}}', String.valueOf(errorCount));
+        emailBody = emailBody.replace('{{errorMessages}}', errorDetails);
+        emailBody = emailBody.replace('{{projectUrl}}', projectUrl);
+        emailBody = emailBody.replace('{{tasksUrl}}', tasksUrl);
+        
+        email.setHtmlBody(
+            emailBody
+        );
+        email.setToAddresses(
+            new String[] { userEmail }
+        );
         email.setSubject(
-            'CSV Import Completed with Errors'
+            template.Subject
         );
 
-        email.setPlainTextBody(
-
-            'CSV IMPORT FAILED\n\n'
-            +'The CSV file could not be imported. No tasks were imported.\n\n'
-
-            + 'File Name: '
-            + fileName
-            + '\n\n'
-
-            + 'Total Tasks: '
-            + totalCount
-            + '\n'
-
-            + 'Failed Tasks: '
-            + errorCount
-            + '\n\n'
-
-            + 'Error Details:\n'
-            + String.join(errorMessages, '\n\n')
-            + '\n\n'
-
-            + 'Project Link:\n'
-            + projectUrl
-            + '\n'
-
-            + 'View Tasks:\n'
-            + taskUrl
+        Messaging.SendEmailResult[] results = Messaging.sendEmail(
+            new Messaging.SingleEmailMessage[] { email }
         );
-        Messaging.sendEmail(
-            new Messaging.SingleEmailMessage[] {
-                email
-            }
-        );
-        System.debug('Error Email Sent to: ' + userEmail);
     }
 
     // Delete CSV after import
