@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+        .import-body {
+            font-family:
+            "Salesforce Sans", "Meiryo", "Yu Gothic", "Hiragino Kaku Gothic ProN",
+            sans-serif;
+            font-size: 0.88rem;
+            color: #333;
+        }
+
+        .import-header {
+            background-color: #2baf6a;
+            color: #fff;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .import-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .import-summary {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            background-color: #e6f7ee;
+        }
+
+        .import-summary h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #1a7a47;
+        }
+
+        td{
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .button-link {
+            padding: 0.3rem 0.8rem;
+            border: 1px solid #239b5b;
+            border-radius: 4px;
+            background: #239b5b;
+            gap: 0.3rem;
+        }
+        .button-link a {
+            color: #ffffff !important;
+            text-decoration: none !important;
+        } 
+        
+        .import-footer{
+            margin-top: 2rem;
+            font-size: 0.8rem;
+        }
+        
+    </style>
+  </head>
+  <body>
+    <div class="import-body">
+        <!-- Header -->
+        <div class="import-header">
+            <h1>CSV Import Completed</h1>
+        </div>
+        <!-- Content -->
+        <p>Your CSV file has been imported successfully.</p>
+        <!-- Import Summary -->
+        <div class="import-summary">
+            <h2>Import Summary</h2>
+            <table>
+                <tr>
+                    <td><b>File Name</b></td>
+                    <td>{{fileName}}</td>
+                </tr>
+                <tr>
+                    <td><b>Total Tasks</b></td>
+                    <td>{{totalTasks}}</td>
+                </tr>
+                <tr>
+                    <td><b>Successfully Imported</b></td>
+                    <td>{{successfulImports}}</td>
+                </tr>
+            </table>
+        </div>
+        <!-- Quick Links -->
+        <h2>Quick Links</h2>
+        <p>You can view the project details and manage tasks using the links below:</p>
+        <button class="button-link"> 
+            <a href="{{projectUrl}}">Project Detail</a>    
+        </button>
+        <button class="button-link"> 
+            <a href="{{tasksUrl}}">Project Task Management</a>
+        </button>
+        <!-- Footer -->
+        <div class="import-footer">
+            Thank you,<br>
+            <b>JIPA Project Task List Mass Import Team </b>
+        </div>
+    </div>
+  </body>
+</html>

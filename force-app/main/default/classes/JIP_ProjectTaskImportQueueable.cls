@@ -131,7 +131,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         String tasksUrl =
              baseUrl + '/lightning/n/JIP_TicketManagement'
              +'?projectId='
-             +projectId;
+             + projectId;
 
         // Create the email message
         EmailTemplate template = [
@@ -181,7 +181,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         String tasksUrl =
              baseUrl + '/lightning/n/JIP_TicketManagement'
              +'?projectId='
-             +projectId;
+             + projectId;
 
         Messaging.SingleEmailMessage email =
             new Messaging.SingleEmailMessage();
