@@ -419,7 +419,7 @@ public with sharing class JIP_ProjectTaskController {
   }
 
   public void openMassImportConfirmModal() {
-
+    showMassImportModal = false;
     if (selectedProjectId == null) {
       addError('Vui lòng chọn dự án.');
       return;
@@ -443,7 +443,8 @@ public with sharing class JIP_ProjectTaskController {
       showMassImportConfirmModal = true;
     }
     catch (Exception e) {
-      addError('Tải tệp thất bại :' + e.getMessage());
+      addError(e.getMessage());
+      addError('File upload failed. Please check the selected CSV file and try again.');
     }
   }
 

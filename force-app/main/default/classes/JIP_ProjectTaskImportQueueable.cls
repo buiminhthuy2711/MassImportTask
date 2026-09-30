@@ -33,7 +33,36 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         if (cv != null && cv.VersionData != null) {
             String versionDataString = cv.VersionData.toString();
             List<String> csvRows = versionDataString.split('\n');
-            System.debug('CSV Rows: ' + csvRows);
+            System.debug('csvRows' + csvRows.size());
+            if (csvRows.size() <= 1) {
+                errorCount += 1;
+                errorMessages.add('CSV file contains headers only.');
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                deleteImportedCSV(cv);
+                return;
+            }
+
+            List<String> header = new List<String> {
+                'Type', 'Subject', 'Assignee', 'Status', 'Category', 'Priority', 'Version/Milestone', 'Due Date', 'Description'
+            };
+            List<String> csvHeader = csvRows[0].split(',');
+            Boolean isValidHeader = csvHeader.size() == header.size();
+            if (isValidHeader) {
+                for (Integer i = 0; i <header.size(); i++) {
+                    if (csvHeader[i].trim() != header[i]) {
+                        isValidHeader = false;
+                        break;
+                    }
+                }
+            }
+            if (!isValidHeader) {
+                errorCount += 1;
+                errorMessages.add('CSV header is missing or invalid.');
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                deleteImportedCSV(cv);
+                return;
+            }
+
             List<JIP_ProjectTask__c> tasksToInsert = new List<JIP_ProjectTask__c>();
             Set<String> workerCodes = new Set<String>();
             Map<String, Id> workersByCode = new Map<String, Id>();
@@ -231,5 +260,4 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             );
         }
     }
-
 }
