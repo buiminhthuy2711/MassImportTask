@@ -609,6 +609,25 @@
       color: #fff;
       border-color: var(--green);
     }
+    .file-upload-row {
+      background: var(--green-light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .download-resource {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      margin: 0.25rem 0;
+    }
+
+    .download-content p {
+      margin: 0;
+      color: var(--text-light);
+    }
 
     @media (max-width: 900px) {
       .form-grid {
@@ -1253,87 +1272,87 @@
     </div>
 
     <!-- Mass Import Modal -->
-     <apex:outputPanel id="massImportModal" 
-        rendered="{!showMassImportModal}"
-        >
-      <div class = "modal-overlay">
-        <div class = "modal-box">
-          <div class = "modal-header">
-            <h2>{!T['mass_import_tasks']}</h2>
-          </div>
-          <div class = "modal-body"> 
-            <div class="form-group">
-              <label>Select CSV File</label>
-              <div class="file-upload-row">
-                <div class="upload-icon">
-                  <apex:image url="{!$Resource.Upload_Icon}" width="80" height="80"/>
-                </div>
-                <div class="choose-file">
-                  <button
-                    type="button"
-                    onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
-                    Choose File
-                  </button> 
-                  <!-- Salesforce Input File -->
-                  <apex:inputFile 
-                    id="csvFileInput"
-                    value="{!importFileBody}"
-                    filename="{!importFileName}"
-                    accept=".csv"
-                    style="display:none;"
-                    onchange="handleCsvFile(this)"
-                  />
-                  <span id="selectedFileName">
-                    No file selected
-                  </span>
-                  <div id="fileError"
-                    style="display:none;">
-                  </div>  
+    <apex:outputPanel id="massImportModal" 
+      rendered="{!showMassImportModal}"
+      >
+    <div class = "modal-overlay">
+      <div class = "modal-box">
+        <div class = "modal-header">
+          <h2>{!T['mass_import_tasks']}</h2>
+        </div>
+        <div class = "modal-body"> 
+          <div class="form-group">
+            <label>Select CSV File</label>
+            <div class="file-upload-row">
+              <div class="upload-icon">
+                <apex:image url="{!$Resource.Upload_Icon}" width="80" height="80"/>
+              </div>
+              <div class="choose-file">
+                <button
+                  type="button"
+                  onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
+                  Choose File
+                </button> 
+                <!-- Salesforce Input File -->
+                <apex:inputFile 
+                  id="csvFileInput"
+                  value="{!importFileBody}"
+                  filename="{!importFileName}"
+                  accept=".csv"
+                  style="display:none;"
+                  onchange="handleCsvFile(this)"
+                />
+                <span id="selectedFileName">
+                  No file selected
+                </span>
+                <div id="fileError"
+                  style="display:none;">
                 </div>  
+              </div>  
+            </div>
+            <!-- Download CSV Template -->
+            <div class="download-resource">
+              <div class="download-icon">
+                <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
               </div>
-              <!-- Download CSV Template -->
-              <div class="download-resource">
-                <div class="download-icon">
-                  <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
-                </div>
-                <div class="download-content">
-                  <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Template.csv')}">
-                    Download CSV Template
-                  </apex:outputLink>
-                  <p>
-                    Download the CSV file for importing tasks.
-                  </p>
-                </div>
+              <div class="download-content">
+                <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Template.csv')}">
+                  Download CSV Template
+                </apex:outputLink>
+                <p>
+                  Download the CSV file for importing tasks.
+                </p>
               </div>
-              <div class="download-resource">
-                <div class="download-icon">
-                  <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
-                </div>
-                <div class="download-content">
-                  <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Guide.xlsx')}">
-                    Download Field Guide (Excel)
-                  </apex:outputLink>
-                  <p>
-                    View picklist values and field requirements.
-                  </p>
-                </div>
+            </div>
+            <div class="download-resource">
+              <div class="download-icon">
+                <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
+              </div>
+              <div class="download-content">
+                <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Guide.xlsx')}">
+                  Download Field Guide (Excel)
+                </apex:outputLink>
+                <p>
+                  View picklist values and field requirements.
+                </p>
               </div>
             </div>
           </div>
-          <div class = "modal-footer">
-            <apex:commandButton value="{!T['import']}"
-              onclick="return validateCsvFile();"
-              action="{!openMassImportConfirmModal}"
-              styleClass="btn-modal btn-modal-save"
-            />
-            <apex:commandButton value="{!T['close']}"
-              action="{!closeMassImportModal}"
-              styleClass="btn-modal btn-modal-cancel"
-            />
-          </div>
+        </div>
+        <div class = "modal-footer">
+          <apex:commandButton value="{!T['import']}"
+            onclick="return validateCsvFile();"
+            action="{!openMassImportConfirmModal}"
+            styleClass="btn-modal btn-modal-save"
+          />
+          <apex:commandButton value="{!T['close']}"
+            action="{!closeMassImportModal}"
+            styleClass="btn-modal btn-modal-cancel"
+          />
         </div>
       </div>
-     </apex:outputPanel>
+    </div>
+    </apex:outputPanel>
 
     <!-- Mass Import Confirm Modal -->
     <apex:outputPanel id="massImportConfirm" 
