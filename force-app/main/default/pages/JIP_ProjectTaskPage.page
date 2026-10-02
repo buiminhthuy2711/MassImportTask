@@ -1265,26 +1265,58 @@
             <div class="form-group">
               <label>Select CSV File</label>
               <div class="file-upload-row">
-                <button
-                  type="button"
-                  onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
-                  Choose File
-                </button> 
-                <!-- Salesforce Input File -->
-                 <apex:inputFile 
-                  id="csvFileInput"
-                  value="{!importFileBody}"
-                  filename="{!importFileName}"
-                  accept=".csv"
-                  style="display:none;"
-                  onchange="handleCsvFile(this)"
+                <div class="upload-icon">
+                  <apex:image url="{!$Resource.Upload_Icon}" width="80" height="80"/>
+                </div>
+                <div class="choose-file">
+                  <button
+                    type="button"
+                    onclick="document.getElementById('{!$Component.mainForm.csvFileInput}').click();">
+                    Choose File
+                  </button> 
+                  <!-- Salesforce Input File -->
+                  <apex:inputFile 
+                    id="csvFileInput"
+                    value="{!importFileBody}"
+                    filename="{!importFileName}"
+                    accept=".csv"
+                    style="display:none;"
+                    onchange="handleCsvFile(this)"
                   />
-                <span id="selectedFileName">
-                   No file selected
-                  </span>  
+                  <span id="selectedFileName">
+                    No file selected
+                  </span>
+                  <div id="fileError"
+                    style="display:none;">
+                  </div>  
+                </div>  
               </div>
-              <div id="fileError"
-                   style="display:none;">
+              <!-- Download CSV Template -->
+              <div class="download-resource">
+                <div class="download-icon">
+                  <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
+                </div>
+                <div class="download-content">
+                  <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Template.csv')}">
+                    Download CSV Template
+                  </apex:outputLink>
+                  <p>
+                    Download the CSV file for importing tasks.
+                  </p>
+                </div>
+              </div>
+              <div class="download-resource">
+                <div class="download-icon">
+                  <apex:image url="{!$Resource.Download_Icon}" width="30" height="30"/>
+                </div>
+                <div class="download-content">
+                  <apex:outputLink value="{!URLFOR($Resource.Project_Task_Mass_Import_Resources, 'Project_Task_Mass_Import_Guide.xlsx')}">
+                    Download Field Guide (Excel)
+                  </apex:outputLink>
+                  <p>
+                    View picklist values and field requirements.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
