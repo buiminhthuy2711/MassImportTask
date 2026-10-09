@@ -33,7 +33,36 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         if (cv != null && cv.VersionData != null) {
             String versionDataString = cv.VersionData.toString();
             List<String> csvRows = versionDataString.split('\n');
-            System.debug('CSV Rows: ' + csvRows);
+            System.debug('csvRows' + csvRows.size());
+            if (csvRows.size() <= 1) {
+                errorCount += 1;
+                errorMessages.add('CSV file contains headers only.');
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                deleteImportedCSV(cv);
+                return;
+            }
+
+            List<String> header = new List<String> {
+                'Type', 'Subject', 'Assignee', 'Status', 'Category', 'Priority', 'Version/Milestone', 'Due Date', 'Description'
+            };
+            List<String> csvHeader = csvRows[0].split(',');
+            Boolean isValidHeader = csvHeader.size() == header.size();
+            if (isValidHeader) {
+                for (Integer i = 0; i <header.size(); i++) {
+                    if (csvHeader[i].trim() != header[i]) {
+                        isValidHeader = false;
+                        break;
+                    }
+                }
+            }
+            if (!isValidHeader) {
+                errorCount += 1;
+                errorMessages.add('CSV header is missing or invalid. Expected: ' + String.join(header, ', '));
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                deleteImportedCSV(cv);
+                return;
+            }
+
             List<JIP_ProjectTask__c> tasksToInsert = new List<JIP_ProjectTask__c>();
             Set<String> workerCodes = new Set<String>();
             Map<String, Id> workersByCode = new Map<String, Id>();
@@ -63,18 +92,26 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 List<String> csvColumns = csvRows[i].split(',');
                 System.debug('CSV Columns: ' + csvColumns);
                 JIP_ProjectTask__c csvTask = new JIP_ProjectTask__c();
-                csvTask.Project__c = projectId;
-                csvTask.TaskType__c = csvColumns[0];
-                csvTask.Subject__c = csvColumns[1];
-                csvTask.Assignee__c = workersByCode.get(csvColumns[2]);
-                csvTask.Status__c = csvColumns[3];
-                csvTask.Category__c = csvColumns[4];
-                csvTask.Priority__c = csvColumns[5];
-                csvTask.Milestone__c = csvColumns[6];
-                csvTask.DueDate__c = Date.valueOf(csvColumns[7]);
-                csvTask.Description__c = csvColumns[8];
-                System.debug('CSV Task: ' + csvTask);
-                tasksToInsert.add(csvTask);
+                if (csvColumns.size() != header.size()) {
+                    errorCount++;
+                    Integer csvRow = i + 1; // +1 to account for header row
+                    errorMessages.add('Invalid number of columns at Row ' + csvRow);
+                    continue;
+                }
+                else {
+                    csvTask.Project__c = projectId;
+                    csvTask.TaskType__c = csvColumns[0];
+                    csvTask.Subject__c = csvColumns[1];
+                    csvTask.Assignee__c = workersByCode.get(csvColumns[2]);
+                    csvTask.Status__c = csvColumns[3];
+                    csvTask.Category__c = csvColumns[4];
+                    csvTask.Priority__c = csvColumns[5];
+                    csvTask.Milestone__c = csvColumns[6];
+                    csvTask.DueDate__c = Date.valueOf(csvColumns[7]);
+                    csvTask.Description__c = csvColumns[8];
+                    System.debug('CSV Task: ' + csvTask);
+                    tasksToInsert.add(csvTask);
+                }
             }
 
             // Count total tasks
@@ -159,6 +196,10 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Messaging.SendEmailResult[] results = Messaging.sendEmail(
             new Messaging.SingleEmailMessage[] { email }
         );
+
+        for (Messaging.SendEmailResult result : results) {
+            System.debug('Email send success: ' + result.isSuccess());
+        }
     } 
 
     // SEND IMPORT ERROR EMAIL
@@ -221,6 +262,10 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Messaging.SendEmailResult[] results = Messaging.sendEmail(
             new Messaging.SingleEmailMessage[] { email }
         );
+
+        for (Messaging.SendEmailResult result : results) {
+            System.debug('Email send error: ' + result.isSuccess());
+        }
     }
 
     // Delete CSV after import
@@ -231,5 +276,4 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             );
         }
     }
-
 }
