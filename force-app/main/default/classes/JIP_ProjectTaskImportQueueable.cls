@@ -70,8 +70,8 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             // Collect all unique worker codes from the CSV
             for(Integer i = 1; i < csvRows.size(); i++) {
                 List<String> csvColumns = csvRows[i].split(',');
-                if(csvColumns[2] != null && csvColumns[2] != '') {
-                    workerCodes.add(csvColumns[2]);
+                if(csvColumns[2].trim() != null && csvColumns[2].trim() != '') {
+                    workerCodes.add(csvColumns[2].trim());
                 }
             }
 
@@ -92,6 +92,14 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 List<String> csvColumns = csvRows[i].split(',');
                 System.debug('CSV Columns: ' + csvColumns);
                 JIP_ProjectTask__c csvTask = new JIP_ProjectTask__c();
+                // Skip empty rows
+                if (csvRows[i].trim() == '') {
+                    continue;
+                }
+                // Add an empty string for description
+                if (csvRows[i].endsWith(',') && csvColumns.size() == 8) {
+                    csvColumns.add('');
+                }
                 if (csvColumns.size() != header.size()) {
                     errorCount++;
                     Integer csvRow = i + 1; // +1 to account for header row
