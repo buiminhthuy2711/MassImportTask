@@ -100,7 +100,14 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             // Collect all unique worker codes from the CSV
             for(Integer i = 1; i < csvRows.size(); i++) {
                 List<String> csvColumns = csvRows[i].split(',');
-                if(csvColumns[2] != null && csvColumns[2] != '') {
+                if (csvColumns.size() != header.size()) {
+                    errorCount++;
+                    Integer csvRow = i + 1; // +1 to account for header row
+                    errorMessages.add('Invalid number of columns at Row ' + csvRow);
+                    continue;
+                }
+
+                if(errorCount == 0 && csvColumns[2] != null && csvColumns[2] != '') {
                     workerCodes.add(csvColumns[2]);
                 }
             }
@@ -146,7 +153,8 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
 
             // Count total tasks
             totalCount = tasksToInsert.size();
-
+            
+            // Insert tasks and handle errors
             try {
                 Database.SaveResult[] results = Database.insert(tasksToInsert, true);
                 for (Database.SaveResult result : results) {
