@@ -20,6 +20,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Integer totalCount = 0;
         Integer successCount = 0;
         Integer errorCount = 0;
+        Integer recordLimitPerImport;
         List<String> errorMessages = new List<String>();
         
         ContentVersion cv = [
@@ -29,10 +30,39 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             LIMIT 1
         ];
 
+        try {
+            recordLimitPerImport = Integer.valueOf(
+                System.Label.Project_Task_Import_Record_Limit.trim()
+            );
+        } catch (Exception e) {
+            errorCount += 1;
+            errorMessages.add('Invalid record limit configuration: ' + e.getMessage());
+            sendImportErrorEmail(totalCount, errorCount, errorMessages);
+            deleteImportedCSV(cv);
+            return;
+        }
+        if (recordLimitPerImport <= 0) {
+            errorCount += 1;
+            errorMessages.add('Record limit configuration must be greater than zero.');
+            sendImportErrorEmail(totalCount, errorCount, errorMessages);
+            deleteImportedCSV(cv);
+            return;
+        }
+
         // Parse the CSV file and create ProjectTask records
         if (cv != null && cv.VersionData != null) {
             String versionDataString = cv.VersionData.toString();
             List<String> csvRows = versionDataString.split('\n');
+
+            // Check if the number of records exceeds the limit
+            if (csvRows.size() - 1 > recordLimitPerImport) {
+                errorCount += 1;
+                errorMessages.add('CSV file exceeds the maximum allowed number of records: ' + recordLimitPerImport);
+                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                deleteImportedCSV(cv);
+                return;
+            }
+
             System.debug('csvRows' + csvRows.size());
             if (csvRows.size() <= 1) {
                 errorCount += 1;
