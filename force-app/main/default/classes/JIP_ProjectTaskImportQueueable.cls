@@ -176,11 +176,16 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             }
 
             // SEND EMAIL AFTER IMPORT
-            if (errorCount > 0) {
-                sendImportErrorEmail(totalCount, errorCount, errorMessages);
-            } else {
-                sendImportSuccessEmail(totalCount, successCount);
+            try {
+                if (errorCount > 0) {
+                    sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                } else {
+                    sendImportSuccessEmail(totalCount, successCount);
+                }
+            } catch (Exception e) {
+                System.debug('Error sending email: ' + e.getMessage());
             }
+            
             deleteImportedCSV(cv);
         }
     }
@@ -210,12 +215,17 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
              + projectId;
 
         // Create the email message
-        EmailTemplate template = [
+        List<EmailTemplate> templates = [
             SELECT Id, Subject, HtmlValue, Body
             FROM EmailTemplate
-            WHERE DeveloperName = 'Mass_Import_Completion'
+            WHERE DeveloperName = 'Mass_Import_Success'
             LIMIT 1
         ];
+        if (templates.isEmpty()) {
+            System.debug('Email template not found.');
+            return;
+        }
+        EmailTemplate template = templates[0];
         string emailBody = template.HtmlValue;
         emailBody = emailBody.replace('{{fileName}}', fileName);
         emailBody = emailBody.replace('{{totalTasks}}', String.valueOf(totalCount));
