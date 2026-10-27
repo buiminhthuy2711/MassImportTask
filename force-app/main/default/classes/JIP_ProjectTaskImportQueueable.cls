@@ -138,12 +138,12 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 }
                 else {
                     csvTask.Project__c = projectId;
-                    csvTask.TaskType__c = csvColumns[0];
+                    csvTask.TaskType__c = picklistValueOrDefault(JIP_ProjectTask__c.TaskType__c, csvColumns[0]);
                     csvTask.Subject__c = csvColumns[1];
                     csvTask.Assignee__c = workersByCode.get(csvColumns[2]);
-                    csvTask.Status__c = csvColumns[3];
-                    csvTask.Category__c = csvColumns[4];
-                    csvTask.Priority__c = csvColumns[5];
+                    csvTask.Status__c = picklistValueOrDefault(JIP_ProjectTask__c.Status__c, csvColumns[3]);
+                    csvTask.Category__c = picklistValueOrDefault(JIP_ProjectTask__c.Category__c, csvColumns[4]);
+                    csvTask.Priority__c = picklistValueOrDefault(JIP_ProjectTask__c.Priority__c, csvColumns[5]);
                     csvTask.Milestone__c = csvColumns[6];
                     csvTask.DueDate__c = Date.valueOf(csvColumns[7]);
                     csvTask.Description__c = csvColumns[8];
@@ -314,5 +314,20 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 Id = cv.ContentDocumentId
             );
         }
+    }
+
+    // Get picklist value or default value
+    private static String picklistValueOrDefault(Schema.SObjectField fieldTask, String csvValue) {
+        if (String.isNotBlank(csvValue)) {
+            return csvValue.trim();
+        }
+
+        for (Schema.PicklistEntry entry : fieldTask.getDescribe().getPicklistValues()) {
+            if (entry.isActive() && entry.isDefaultValue()) {
+                return entry.getValue();
+            }
+        }
+        
+        return null;
     }
 }
