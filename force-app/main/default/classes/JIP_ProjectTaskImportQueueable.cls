@@ -108,8 +108,8 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                     continue;
                 }
 
-                if(errorCount == 0 && csvColumns[2] != null && csvColumns[2] != '') {
-                    workerCodes.add(csvColumns[2]);
+                if(String.isNotBlank(csvColumns[2])) {
+                    workerCodes.add(csvColumns[2].trim());
                 }
             }
 
@@ -140,7 +140,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                     csvTask.Project__c = projectId;
                     csvTask.TaskType__c = picklistValueOrDefault(JIP_ProjectTask__c.TaskType__c, csvColumns[0]);
                     csvTask.Subject__c = csvColumns[1];
-                    csvTask.Assignee__c = workersByCode.get(csvColumns[2]);
+                    csvTask.Assignee__c = workersByCode.get(csvColumns[2].trim());
                     csvTask.Status__c = picklistValueOrDefault(JIP_ProjectTask__c.Status__c, csvColumns[3]);
                     csvTask.Category__c = picklistValueOrDefault(JIP_ProjectTask__c.Category__c, csvColumns[4]);
                     csvTask.Priority__c = picklistValueOrDefault(JIP_ProjectTask__c.Priority__c, csvColumns[5]);
