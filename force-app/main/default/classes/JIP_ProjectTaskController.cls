@@ -421,15 +421,15 @@ public with sharing class JIP_ProjectTaskController {
   public void openMassImportConfirmModal() {
 
     if (selectedProjectId == null) {
-      addError('Vui lòng chọn dự án.');
+      addError('Please select a project.');
       return;
     }
     if (importFileBody == null || String.isBlank(importFileName)) {
-      addError('Vui lòng chọn tệp CSV');
+      addError('Please select a CSV file.');
       return;
     }
     if (!importFileName.toLowerCase().endsWith('.csv')) {
-      addError('Chỉ có thể tải lên tệp CSV');
+      addError('Only CSV files can be uploaded.');
       return;
     }
     try { // Lưu file
@@ -443,7 +443,7 @@ public with sharing class JIP_ProjectTaskController {
       showMassImportConfirmModal = true;
     }
     catch (Exception e) {
-      addError('Tải tệp thất bại :' + e.getMessage());
+      addError('Failed to upload file: ' + e.getMessage());
     }
   }
 
