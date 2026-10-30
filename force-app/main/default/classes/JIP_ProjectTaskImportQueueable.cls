@@ -38,14 +38,14 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         } catch (Exception e) {
             errorCount += 1;
             errorMessages.add('Invalid record limit configuration: ' + e.getMessage());
-            sendImportErrorEmail(totalCount, errorCount, errorMessages);
+            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
             deleteImportedCSV(cv);
             return;
         }
         if (recordLimitPerImport <= 0) {
             errorCount += 1;
             errorMessages.add('Record limit configuration must be greater than zero.');
-            sendImportErrorEmail(totalCount, errorCount, errorMessages);
+            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
             deleteImportedCSV(cv);
             return;
         }
@@ -59,7 +59,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             if (csvRows.size() - 1 > recordLimitPerImport) {
                 errorCount += 1;
                 errorMessages.add('CSV file exceeds the maximum allowed number of records: ' + recordLimitPerImport);
-                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
                 deleteImportedCSV(cv);
                 return;
             }
@@ -68,7 +68,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             if (csvRows.size() <= 1) {
                 errorCount += 1;
                 errorMessages.add('CSV file contains headers only.');
-                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
                 deleteImportedCSV(cv);
                 return;
             }
@@ -89,7 +89,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             if (!isValidHeader) {
                 errorCount += 1;
                 errorMessages.add('CSV header is missing or invalid. Expected: ' + String.join(header, ', '));
-                sendImportErrorEmail(totalCount, errorCount, errorMessages);
+                sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
                 deleteImportedCSV(cv);
                 return;
             }
@@ -175,135 +175,70 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 }
             }
 
-            // SEND EMAIL AFTER IMPORT
+            // Send email to user after import
             try {
-                if (errorCount > 0) {
-                    sendImportErrorEmail(totalCount, errorCount, errorMessages);
-                } else {
-                    sendImportSuccessEmail(totalCount, successCount);
-                }
+                sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
             } catch (Exception e) {
-                System.debug('Error sending email: ' + e.getMessage());
+                System.debug(LoggingLevel.ERROR, 'Email template not found or email sending failed: ' + e.getMessage());
             }
             
             deleteImportedCSV(cv);
         }
     }
 
-    // SEND IMPORT SUCCESS EMAIL
-    private void sendImportSuccessEmail(
+    // Send email to user
+    private void sendImportResultEmail(
         Integer totalCount,
-        Integer successCount
-    ) {
-        Messaging.SingleEmailMessage email =
-            new Messaging.SingleEmailMessage();
-
-        String baseUrl =
-            URL.getOrgDomainUrl().toExternalForm();
-
-        // Link tới Project
-        String projectUrl =
-            baseUrl
-            + '/lightning/r/JIP_Project__c/'
-            + projectId
-            + '/view';
-
-        // Link tới Task Management
-        String tasksUrl =
-             baseUrl + '/lightning/n/JIP_TicketManagement'
-             +'?projectId='
-             + projectId;
-
-        // Create the email message
-        List<EmailTemplate> templates = [
-            SELECT Id, Subject, HtmlValue, Body
-            FROM EmailTemplate
-            WHERE DeveloperName = 'Mass_Import_Success'
-            LIMIT 1
-        ];
-        if (templates.isEmpty()) {
-            System.debug('Email template not found.');
-            return;
-        }
-        EmailTemplate template = templates[0];
-        string emailBody = template.HtmlValue;
-        emailBody = emailBody.replace('{{fileName}}', fileName);
-        emailBody = emailBody.replace('{{totalTasks}}', String.valueOf(totalCount));
-        emailBody = emailBody.replace('{{successfulImports}}', String.valueOf(successCount));
-        emailBody = emailBody.replace('{{projectUrl}}', projectUrl);
-        emailBody = emailBody.replace('{{tasksUrl}}', tasksUrl);
-        email.setHtmlBody(
-            emailBody
-        );
-        email.setToAddresses(
-            new String[] { userEmail }
-        );
-        email.setSubject(
-            template.Subject
-        );
-        
-        Messaging.SendEmailResult[] results = Messaging.sendEmail(
-            new Messaging.SingleEmailMessage[] { email }
-        );
-
-        for (Messaging.SendEmailResult result : results) {
-            System.debug('Email send success: ' + result.isSuccess());
-        }
-    } 
-
-    // SEND IMPORT ERROR EMAIL
-    private void sendImportErrorEmail(
-        Integer totalCount,
+        Integer successCount,
         Integer errorCount,
         List<String> errorMessages
     ){
-        String baseUrl =
-            URL.getOrgDomainUrl().toExternalForm();
+        Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
 
-        // Link tới Project
-        String projectUrl =
-            baseUrl
-            + '/lightning/r/JIP_Project__c/'
-            + projectId
-            + '/view';
+        String baseUrl = URL.getOrgDomainUrl().toExternalForm();
+        String projectUrl = baseUrl + '/lightning/r/JIP_Project__c/' + projectId + '/view';
+        String tasksUrl = baseUrl + '/lightning/n/JIP_TicketManagement?projectId=' + projectId;
 
-        // Link tới Task Management
-        String tasksUrl =
-             baseUrl + '/lightning/n/JIP_TicketManagement'
-             +'?projectId='
-             + projectId;
-
-        Messaging.SingleEmailMessage email =
-            new Messaging.SingleEmailMessage();
-
-        email.setToAddresses(
-            new String[] { userEmail }
-        );
-
-       // Create the email message
-        EmailTemplate template = [
-            SELECT Id, Subject, HtmlValue, Body
+        Boolean hasErrors = errorCount > 0;
+        String templateName = hasErrors ? 'Mass_Import_Error' : 'Mass_Import_Completion';
+        List<EmailTemplate> templates = [
+            SELECT Subject, HtmlValue
             FROM EmailTemplate
-            WHERE DeveloperName = 'Mass_Import_Error'
+            WHERE DeveloperName = :templateName
             LIMIT 1
         ];
-
+        if (templates.isEmpty()) {
+            System.debug(LoggingLevel.ERROR, 'Email template not found.');
+            return;
+        }
+        EmailTemplate template = templates[0];
         String emailBody = template.HtmlValue;
         String errorDetails = String.join(errorMessages, '<br><br>');
         errorDetails = errorDetails.replace('\n', '<br>');
-        emailBody = emailBody.replace('{{fileName}}', fileName);
-        emailBody = emailBody.replace('{{totalTasks}}', String.valueOf(totalCount));
-        emailBody = emailBody.replace('{{failedImports}}', String.valueOf(errorCount));
-        emailBody = emailBody.replace('{{errorMessages}}', errorDetails);
-        emailBody = emailBody.replace('{{projectUrl}}', projectUrl);
-        emailBody = emailBody.replace('{{tasksUrl}}', tasksUrl);
-        
+
+        Map<String, String> placeholders = new Map<String, String>{
+            '{{fileName}}' => fileName,
+            '{{totalTasks}}'=> String.valueOf(totalCount),
+            '{{successfulImports}}' => String.valueOf(successCount),
+            '{{failedImports}}' => String.valueOf(errorCount),
+            '{{errorMessages}}' => errorDetails,
+            '{{projectUrl}}' => projectUrl,
+            '{{tasksUrl}}' => tasksUrl
+        };
+        for (String key : placeholders.keySet()) {
+            String value = placeholders.get(key);
+            String safeValue = value == null ? '' : value;
+            emailBody = emailBody.replace(key, safeValue);
+        }
+
         email.setHtmlBody(
             emailBody
         );
+
         email.setToAddresses(
-            new String[] { userEmail }
+            new List<String> { userEmail }
         );
+
         email.setSubject(
             template.Subject
         );
@@ -311,10 +246,6 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         Messaging.SendEmailResult[] results = Messaging.sendEmail(
             new Messaging.SingleEmailMessage[] { email }
         );
-
-        for (Messaging.SendEmailResult result : results) {
-            System.debug('Email send error: ' + result.isSuccess());
-        }
     }
 
     // Delete CSV after import
