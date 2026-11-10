@@ -4,6 +4,15 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
     private String userEmail;
     private String fileName;
 
+    private static final String STATUS_SENT = 'Sent';
+    private static final String STATUS_FAILED = 'Failed';
+    private static final String STATUS_TEMPLATE_NOT_FOUND = 'Template Not Found';
+
+    private static final String TEMPLATE_COMPLETION = 'Mass_Import_Completion';
+    private static final String TEMPLATE_ERROR = 'Mass_Import_Error';
+
+    private static final String MSG_TEMPLATE_NOT_FOUND = 'Email template not found.';
+
     public JIP_ProjectTaskImportQueueable(
          Id contentVersionId,
          Id projectId,
@@ -202,30 +211,32 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         String tasksUrl = baseUrl + '/lightning/n/JIP_TicketManagement?projectId=' + projectId;
 
         Boolean hasErrors = errorCount > 0;
-        String templateName = hasErrors ? 'Mass_Import_Error' : 'Mass_Import_Completion';
+        String templateName = hasErrors ? TEMPLATE_ERROR : TEMPLATE_COMPLETION;
         List<EmailTemplate> templates = [
             SELECT Subject, HtmlValue
             FROM EmailTemplate
             WHERE DeveloperName = :templateName
             LIMIT 1
         ];
+
         if (templates.isEmpty()) {
-            System.debug(LoggingLevel.ERROR, 'Email template not found.');
+            createEmailLog(templateName, false, STATUS_TEMPLATE_NOT_FOUND, null, MSG_TEMPLATE_NOT_FOUND);
             return;
         }
+
         EmailTemplate template = templates[0];
         String emailBody = template.HtmlValue;
         String errorDetails = String.join(errorMessages, '<br><br>');
         errorDetails = errorDetails.replace('\n', '<br>');
 
         Map<String, String> placeholders = new Map<String, String>{
-            '{{fileName}}' => fileName,
-            '{{totalTasks}}'=> String.valueOf(totalCount),
+            '{{fileName}}'          => fileName,
+            '{{totalTasks}}'        => String.valueOf(totalCount),
             '{{successfulImports}}' => String.valueOf(successCount),
-            '{{failedImports}}' => String.valueOf(errorCount),
-            '{{errorMessages}}' => errorDetails,
-            '{{projectUrl}}' => projectUrl,
-            '{{tasksUrl}}' => tasksUrl
+            '{{failedImports}}'     => String.valueOf(errorCount),
+            '{{errorMessages}}'     => errorDetails,
+            '{{projectUrl}}'        => projectUrl,
+            '{{tasksUrl}}'          => tasksUrl
         };
         for (String key : placeholders.keySet()) {
             String value = placeholders.get(key);
@@ -245,9 +256,20 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             template.Subject
         );
 
-        Messaging.SendEmailResult[] results = Messaging.sendEmail(
-            new Messaging.SingleEmailMessage[] { email }
-        );
+        try {
+            Messaging.SendEmailResult[] results = Messaging.sendEmail(
+                new Messaging.SingleEmailMessage[] { email },
+                false
+            );
+            if (results[0].isSuccess()) {
+                createEmailLog(templateName, true, STATUS_SENT, template.Subject, null);
+            } else {
+                String errorMessage = getSendErrors(results);
+                createEmailLog(templateName, true, STATUS_FAILED, template.Subject, errorMessage);
+            }
+        } catch (Exception e) {
+            createEmailLog(templateName, true, STATUS_FAILED, template.Subject, e.getMessage());
+        }
     }
 
     // Delete CSV after import
@@ -272,5 +294,44 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         }
         
         return null;
+    }
+
+    private void createEmailLog(
+        String templateName,
+        Boolean templateFound,
+        String status,
+        String subject, 
+        String errorMessage
+    ){
+        JIP_Email_Send_Log__c emailLog = new JIP_Email_Send_Log__c();
+        emailLog.Template_Developer_Name__c = templateName;
+        emailLog.Template_Found__c = templateFound;
+        emailLog.Send_Status__c = status;
+        emailLog.Email_Subject__c = subject;
+        emailLog.Error_Message__c = errorMessage;
+        emailLog.Recipient_Email__c = userEmail;
+        emailLog.JIP_Project__c = projectId;
+        emailLog.File_Name__c = fileName;
+        emailLog.Attempted_At__c = System.now();
+        try {
+            insert emailLog;
+        } catch (Exception e) {
+            System.debug('Error creating email log: ' + e.getMessage());
+        }
+    }
+
+    private static String getSendErrors(Messaging.SendEmailResult[] results) {
+        List<String> errorMessages = new List<String>();
+        for (Messaging.SendEmailResult result : results) {
+            if (!result.isSuccess()) {
+                for (Messaging.SendEmailError error : result.getErrors()) {
+                    errorMessages.add(error.getMessage());
+                }
+            }
+        }
+        if (errorMessages.isEmpty()) {
+            errorMessages.add('Unknown error occurred while sending email.');
+        }
+        return String.join(errorMessages, '\n');
     }
 }
