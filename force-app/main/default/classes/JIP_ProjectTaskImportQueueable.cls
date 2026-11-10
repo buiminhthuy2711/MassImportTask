@@ -165,11 +165,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
         // Báo lỗi chi tiết 
             if (cols.size() != EXPECTED_HEADER.size()) {
                 errorCount += 1;
-                String parsedValues = String.join(cols, ' | ');
-                errorMessages.add('Row ' + lineNum + ': Invalid number of columns (expected 9, got '
-                    + cols.size() + ').\n'
-                    + 'Please check if any field is missing or contains an unquoted comma.\n'
-                    + 'System parsed values: [' + parsedValues + ']');
+                errorMessages.add('Row ' + lineNum + ': Incorrect number of columns (expected 9, but found '+ cols.size() + '). \nPlease check if any text contains a comma (,) without being enclosed in quotes ("").');
                 continue;
             }
 
@@ -178,7 +174,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
             //  Required: Subject column B
             String subject = cols[COL_SUBJECT] == null ? '' : cols[COL_SUBJECT].trim();
             if (String.isBlank(subject)) {
-                rowErrors.add('Column B (Subject) is required');
+                rowErrors.add('\'Subject\' is required');
             }
 
             //  Required + validate format: Due Date H
@@ -196,15 +192,15 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
             if (String.isNotBlank(assigneeCode)) {
                 assigneeId = workersByCode.get(assigneeCode);
                 if (assigneeId == null) {
-                    rowErrors.add('Column C (Assignee): Worker with code "' + assigneeCode + '" not found');
+                    rowErrors.add('Assignee with code "' + assigneeCode + '" does not exist');
                 }
             }
 
             //  Picklist: validate giá trị hợp lệ (rỗng → dùng default)
-            String taskType = resolvePicklistValue(typeEntries, cols[COL_TYPE], 'Type', 'Column A', rowErrors);
-            String status   = resolvePicklistValue(statusEntries, cols[COL_STATUS], 'Status', 'Column D', rowErrors);
-            String category = resolvePicklistValue(categoryEntries, cols[COL_CATEGORY], 'Category', 'Column E', rowErrors);
-            String priority = resolvePicklistValue(priorityEntries, cols[COL_PRIORITY], 'Priority', 'Column F', rowErrors);
+            String taskType = resolvePicklistValue(typeEntries, cols[COL_TYPE], 'Task Type', rowErrors);
+            String status   = resolvePicklistValue(statusEntries, cols[COL_STATUS], 'Status', rowErrors);
+            String category = resolvePicklistValue(categoryEntries, cols[COL_CATEGORY], 'Category', rowErrors);
+            String priority = resolvePicklistValue(priorityEntries, cols[COL_PRIORITY], 'Priority', rowErrors);
 
             // Nếu có lỗi → báo và skip dòng (partial success)
             if (!rowErrors.isEmpty()) {
@@ -278,7 +274,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
 
         // Bỏ UTF-8 BOM
         if (content.startsWith('\uFEFF')) {
-            content = content.substring(1);
+            content = content.substring(1); 
         }
 
         List<String> currentRow = new List<String>();
@@ -323,7 +319,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
                     lineNumber++;
                     rowStartLine = lineNumber;
                     i++;
-                    // nuốt luôn \n nếu là CRLF
+                    // mất \n nếu là CRLF
                     if (i < len && content.substring(i, i + 1) == '\n') i++;
                 } else if (c == '\n') {
                     currentRow.add(currentField);
@@ -345,6 +341,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
             currentRow.add(currentField);
             rows.add(new CsvRow(currentRow, rowStartLine));
         }
+        // System.debug('Thông tin Debug' + rows);
         return rows;
     }
 
@@ -369,7 +366,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
         String s = raw.trim();
         // YYYY-MM-DD
         if (!Pattern.matches('\\d{4}-\\d{2}-\\d{2}', s)) {
-            rowErrors.add('Column H (Due Date): Invalid format "' + s + '" (expected YYYY-MM-DD)');
+            rowErrors.add('Invalid \'Due Date\' format (expected YYYY-MM-DD).');
             return null;
         }
         try {
@@ -379,12 +376,12 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
             Integer m = Integer.valueOf(s.substring(5, 7));
             Integer dd = Integer.valueOf(s.substring(8, 10));
             if (d.year() != y || d.month() != m || d.day() != dd) {
-                rowErrors.add('Invalid Due Date: "' + s + '" does not exist');
+                rowErrors.add('\'Due Date\' does not exist (e.g., Feb 30).');
                 return null;
             }
             return d;
         } catch (Exception e) {
-            rowErrors.add('Column H (Due Date): Invalid date "' + s + '"');
+            rowErrors.add('Invalid \'Due Date\'.');
             return null;
         }
     }
@@ -393,7 +390,6 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
         List<Schema.PicklistEntry> entries,
         String rawValue,
         String fieldLabel,
-        String columnLetter,
         List<String> rowErrors
     ) {
         String v = rawValue == null ? '' : rawValue.trim();
@@ -406,7 +402,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable {
         for (Schema.PicklistEntry e : entries) {
             if (e.isActive() && e.getValue() == v) return v;
         }
-        rowErrors.add(columnLetter + ' (' + fieldLabel + '): Invalid picklist value "' + v + '"');
+        rowErrors.add('Invalid value for \'' + fieldLabel + '\'.');
         return null;
     }
 
