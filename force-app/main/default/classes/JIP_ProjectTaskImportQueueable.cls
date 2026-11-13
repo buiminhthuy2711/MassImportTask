@@ -8,7 +8,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
     private static final String STATUS_FAILED = 'Failed';
     private static final String STATUS_TEMPLATE_NOT_FOUND = 'Template Not Found';
 
-    private static final String TEMPLATE_COMPLETION = 'Mass_Import_Completion';
+    private static final String TEMPLATE_COMPLETION = 'Mass_Import_Success';
     private static final String TEMPLATE_ERROR = 'Mass_Import_Error';
 
     private static final String MSG_TEMPLATE_NOT_FOUND = 'Email template not found.';
