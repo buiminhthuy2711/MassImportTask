@@ -4,13 +4,40 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
     private String userEmail;
     private String fileName;
 
+    // Define the required headers for the CSV file
+    private static final List<String> REQUIRED_HEADERS = new List<String>{
+        'Type',
+        'Subject',
+        'Assignee',
+        'Status',
+        'Category',
+        'Priority',
+        'Version/Milestone',
+        'Due Date',
+        'Description'
+    };
+
+    // Define the column indices for the CSV file
+    private static final Integer COL_TYPE = 0;
+    private static final Integer COL_SUBJECT = 1;
+    private static final Integer COL_ASSIGNEE = 2;
+    private static final Integer COL_STATUS = 3;
+    private static final Integer COL_CATEGORY = 4;
+    private static final Integer COL_PRIORITY = 5;
+    private static final Integer COL_MILESTONE = 6;
+    private static final Integer COL_DUE_DATE = 7;
+    private static final Integer COL_DESCRIPTION = 8;
+
+    // Define the status values for email sending
     private static final String STATUS_SENT = 'Sent';
     private static final String STATUS_FAILED = 'Failed';
     private static final String STATUS_TEMPLATE_NOT_FOUND = 'Template Not Found';
 
+    // Define the email template names for success and error notifications
     private static final String TEMPLATE_COMPLETION = 'Mass_Import_Success';
     private static final String TEMPLATE_ERROR = 'Mass_Import_Error';
 
+    // Define the error message for missing email template
     private static final String MSG_TEMPLATE_NOT_FOUND = 'Email template not found.';
 
     public JIP_ProjectTaskImportQueueable(
@@ -25,6 +52,7 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         this.userEmail = userEmail;
         this.fileName = fileName;
     }
+
     public void execute(QueueableContext context) {
         Integer totalCount = 0;
         Integer successCount = 0;
@@ -37,106 +65,99 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             FROM ContentVersion 
             WHERE Id = :contentVersionId 
             LIMIT 1
-        ] ?? null;
+        ];
 
-        // Check if ContentVersion exists and has data
+        // 1. Check if ContentVersion exists and has data
         if (cv == null || cv.VersionData == null) {
-            errorCount++;
-            errorMessages.add('ContentVersion not found or has no data.');
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
+            failImport(cv, 'ContentVersion not found or has no data.');
             return;
         }
         
-        // Get record limit configuration
+        // 2. Get record limit configuration
         try {
             recordLimitPerImport = Integer.valueOf(
                 System.Label.Project_Task_Import_Record_Limit.trim()
             );
         } catch (Exception e) {
-            errorCount++;
-            errorMessages.add('Invalid record limit configuration: ' + e.getMessage());
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
+            failImport(cv, 'Invalid record limit configuration: ' + e.getMessage());
             return;
         }
         if (recordLimitPerImport <= 0) {
-            errorCount += 1;
-            errorMessages.add('Record limit configuration must be greater than zero.');
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
+            failImport(cv, 'Record limit configuration must be greater than zero.');
             return;
         }
 
-        String versionDataString = cv.VersionData.toString();
-        List<String> csvRows = versionDataString.split('\n');
-
-        // Check if the number of records exceeds the limit
-        if (csvRows.size() - 1 > recordLimitPerImport) {
-            errorCount++;
-            errorMessages.add('Record limit exceeded. Maximum allowed: ' + recordLimitPerImport);
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
-            return;
+        // 3. Parse CSV content into structured rows (BOM, CRLF, quoted commas/newlines handled)
+        List<CsvRow> parsedRows;
+        try {
+            parsedRows = parseCsv(cv.VersionData.toString());
         }
-        if (csvRows.size() <= 1) {
-            errorCount++;
-            errorMessages.add('CSV file is empty or only contains headers.');
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
+        catch (Exception e) {
+            failImport(cv, 'Error parsing CSV: ' + e.getMessage());
             return;
         }
 
-        // Validate CSV header
-        List<String> header = new List<String>{
-            'Type',
-            'Subject',
-            'Assignee',
-            'Status',
-            'Category',
-            'Priority',
-            'Version/Milestone',
-            'Due Date',
-            'Description'
-        };
-        List<String> csvHeader = csvRows[0].split(',');
-        Boolean isValidHeader = header.size() == csvHeader.size();
+        // Filter out empty rows
+        List<CsvRow> nonEmptyRows = new List<CsvRow>();
+        for (CsvRow row : parsedRows) {
+            if (!isEmptyRow(row.columns)) {
+                nonEmptyRows.add(row);
+            }
+        }
+
+        // 4. Validate CSV header
+        if (nonEmptyRows.isEmpty()) {
+            failImport(cv, 'CSV is empty. Header row is missing.');
+            return;
+        }
+        CsvRow csvHeader = nonEmptyRows[0];
+        Boolean isValidHeader = REQUIRED_HEADERS.size() == csvHeader.columns.size();
         if (isValidHeader) {
-            for (Integer i = 0; i < header.size(); i++) {
-                if (header[i].trim() != csvHeader[i].trim()) {
+            for (Integer i = 0; i < REQUIRED_HEADERS.size(); i++) {
+                if (REQUIRED_HEADERS[i].trim() != csvHeader.columns[i].trim()) {
                     isValidHeader = false;
                     break;
                 }
             }
         }
         if (!isValidHeader) {
-            errorCount++;
-            errorMessages.add('CSV header is missing or invalid. Expected: ' + String.join(header, ', '));
-            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-            deleteImportedCSV(cv);
+            failImport(cv, 'CSV header is missing or invalid. Expected: ' + String.join(REQUIRED_HEADERS, ', '));
             return;
         }
 
-        List<JIP_ProjectTask__c> tasksToInsert = new List<JIP_ProjectTask__c>();
-        Set<String> workerCodes = new Set<String>();
-        Map<String, Id> workersByCode = new Map<String, Id>();
+        List<CsvRow> dataRows = new List<CsvRow>();
+        for (Integer i = 1; i < nonEmptyRows.size(); i++) {
+            dataRows.add(nonEmptyRows[i]);
+        }
+        // Check if there are any data rows after the header
+        if(dataRows.isEmpty()) {
+            failImport(cv, 'CSV file contains headers only. No data rows found.');
+            return;
+        }
 
-        // Collect all unique worker codes from the CSV
-        for(Integer i = 1; i < csvRows.size(); i++) {
-            List<String> csvColumns = csvRows[i].split(',');
-            if (csvColumns.size() != header.size()) {
-                errorCount++;
-                Integer csvRow = i + 1; // +1 to account for header row
-                errorMessages.add('Invalid number of columns at Row ' + csvRow);
+        // 5. Check record limit
+        if (dataRows.size() > recordLimitPerImport) {
+            failImport(cv, 'CSV file exceeds the maximum allowed records of ' + recordLimitPerImport + '. Found: ' + dataRows.size());
+            return;
+        }
+
+        
+        // 6. Collect all unique worker codes from the CSV
+        Set<String> workerCodes = new Set<String>();
+        for(CsvRow row : dataRows) {
+            List<String> csvColumns = row.columns;
+            if (csvColumns.size() != REQUIRED_HEADERS.size()) {
+                failImport(cv, 'Invalid number of columns at Row ' + row.lineNumber + '. Expected: ' + REQUIRED_HEADERS.size() + ', Found: ' + csvColumns.size());
                 continue;
             }
-
-            if(String.isNotBlank(csvColumns[2])) {
-                workerCodes.add(csvColumns[2].trim());
+            // Trim and add the worker code in the Assignee column to the set if it's not blank
+            if(String.isNotBlank(csvColumns[COL_ASSIGNEE])) {
+                workerCodes.add(csvColumns[COL_ASSIGNEE].trim());
             }
         }
         
         // Query the workers by their codes
+        Map<String, Id> workersByCode = new Map<String, Id>();
         if (!workerCodes.isEmpty()) {
             List<JIP_Worker__c> workers = [
                 SELECT Id, Worker_Code__c 
@@ -147,54 +168,220 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
                 workersByCode.put(worker.Worker_Code__c, worker.Id);
             }
         }
+
+        // 7. Create ProjectTask records from the CSV data
         
-        // Create ProjectTask records from the CSV data
-        for (Integer i = 1; i < csvRows.size(); i++) {
-            List<String> csvColumns = csvRows[i].split(',');
+        // Get picklist values for validation
+        List<Schema.PicklistEntry> typeEntries = JIP_ProjectTask__c.TaskType__c.getDescribe().getPicklistValues();
+        List<Schema.PicklistEntry> statusEntries = JIP_ProjectTask__c.Status__c.getDescribe().getPicklistValues();
+        List<Schema.PicklistEntry> categoryEntries = JIP_ProjectTask__c.Category__c.getDescribe().getPicklistValues();
+        List<Schema.PicklistEntry> priorityEntries = JIP_ProjectTask__c.Priority__c.getDescribe().getPicklistValues();
+        
+        // Iterate through each data row and create a ProjectTask record
+        List<JIP_ProjectTask__c> tasksToInsert = new List<JIP_ProjectTask__c>();
+        List<Integer> taskLineNumbers = new List<Integer>();
+        for (CsvRow row : dataRows) {
+            List<String> csvColumns = row.columns;
             System.debug('CSV Columns: ' + csvColumns);
             JIP_ProjectTask__c csvTask = new JIP_ProjectTask__c();
-            if (csvColumns.size() != header.size()) {
-                errorCount++;
-                Integer csvRow = i + 1; // +1 to account for header row
-                errorMessages.add('Invalid number of columns at Row ' + csvRow);
+            if (csvColumns.size() != REQUIRED_HEADERS.size()) {
+                failImport(cv, 'Invalid number of columns at Row ' + row.lineNumber + '. Expected: ' + REQUIRED_HEADERS.size() + ', Found: ' + csvColumns.size());
                 continue;
+            } 
+            
+            List <String> rowErrors = new List<String>();
+
+            //  Required: Subject column B
+            String subject = csvColumns[COL_SUBJECT] == null ? '' : csvColumns[COL_SUBJECT].trim();
+            if (String.isBlank(subject)) {
+                rowErrors.add('Subject is required');
+            }
+
+            //  Required + validate format: Due Date H
+            Date dueDate = null;
+            String dueDateRaw = csvColumns[COL_DUE_DATE] == null ? '' : csvColumns[COL_DUE_DATE].trim();
+            if (String.isBlank(dueDateRaw)) {
+                rowErrors.add('Due Date is required');
             } else {
+                dueDate = parseDueDate(dueDateRaw, rowErrors);
+            }
+
+            // Assignee: if provided, validate that the worker code exists in the system
+            Id assigneeId = null;
+            String assigneeCode = csvColumns[COL_ASSIGNEE] == null ? '' : csvColumns[COL_ASSIGNEE].trim();
+            if (String.isNotBlank(assigneeCode)) {
+                assigneeId = workersByCode.get(assigneeCode);
+                if (assigneeId == null) {
+                    rowErrors.add('Assignee with code "' + assigneeCode + '" does not exist');
+                }
+            }
+
+            // Picklist fields: Task Type, Status, Category, Priority
+            String taskType = resolvePicklistValue(typeEntries, csvColumns[COL_TYPE], 'Task Type', rowErrors);
+            String status = resolvePicklistValue(statusEntries, csvColumns[COL_STATUS], 'Status', rowErrors);
+            String category = resolvePicklistValue(categoryEntries, csvColumns[COL_CATEGORY], 'Category', rowErrors);
+            String priority = resolvePicklistValue(priorityEntries, csvColumns[COL_PRIORITY], 'Priority', rowErrors);
+
+            // If there are any errors for this row, log them and skip to the next row
+            if (!rowErrors.isEmpty()) {
+                errorCount++;
+                for (String error : rowErrors) {
+                    errorMessages.add('Row ' + row.lineNumber + ': ' + error);
+                }
+                continue; // Skip this row due to errors
+            }
+
+            // If no errors, map the CSV columns to the ProjectTask fields and add to the list for insertion
+            if (rowErrors.isEmpty()) {
                 csvTask.Project__c = projectId;
-                csvTask.TaskType__c = picklistValueOrDefault(JIP_ProjectTask__c.TaskType__c, csvColumns[0]);
-                csvTask.Subject__c = csvColumns[1];
-                csvTask.Assignee__c = workersByCode.get(csvColumns[2].trim());
-                csvTask.Status__c = picklistValueOrDefault(JIP_ProjectTask__c.Status__c, csvColumns[3]);
-                csvTask.Category__c = picklistValueOrDefault(JIP_ProjectTask__c.Category__c, csvColumns[4]);
-                csvTask.Priority__c = picklistValueOrDefault(JIP_ProjectTask__c.Priority__c, csvColumns[5]);
-                csvTask.Milestone__c = csvColumns[6];
-                csvTask.DueDate__c = Date.valueOf(csvColumns[7]);
-                csvTask.Description__c = csvColumns[8];
-                System.debug('CSV Task: ' + csvTask);
+                csvTask.TaskType__c = taskType;
+                csvTask.Subject__c = subject;
+                csvTask.Assignee__c = assigneeId;
+                csvTask.Status__c = status;
+                csvTask.Category__c = category;
+                csvTask.Priority__c = priority;
+                csvTask.Milestone__c = csvColumns[COL_MILESTONE];
+                csvTask.DueDate__c = dueDate;
+                csvTask.Description__c = csvColumns[COL_DESCRIPTION];
                 tasksToInsert.add(csvTask);
+                taskLineNumbers.add(row.lineNumber);
+                System.debug('CSV Task: ' + csvTask);
             }
         }
 
         totalCount = tasksToInsert.size() + errorCount;
+        // 8. Insert the valid ProjectTask records and handle any DML exceptions
         try {
             Database.SaveResult[] results = Database.insert(tasksToInsert, true);
-            for (Database.SaveResult result : results) {
-                successCount++;
-            }
+            successCount = results.size();
         }
         catch (DmlException e) {
-            for (Integer i = 0; i < e.getNumDml(); i++){
+            errorCount += e.getNumDml();
+            for (Integer i = 0; i < e.getNumDml(); i++) {
                 Integer errorIndex = e.getDmlIndex(i);
-                JIP_ProjectTask__c failedTask = tasksToInsert[errorIndex];
-                String taskName = failedTask.Subject__c != null ? failedTask.Subject__c : 'Empty';
-                String errorMessage = e.getDmlMessage(i);
-                Integer csvRow = errorIndex + 2; // +2 to account for header row and 0-based index
-                errorMessages.add('Row ' + csvRow + '\nTask Name: ' + taskName + '\nError: ' + errorMessage);
-                errorCount++;
+                Integer lineNumber = taskLineNumbers[errorIndex];
+                String taskName = tasksToInsert[errorIndex].Subject__c;
+                String errorMessage = 'Row ' + lineNumber + ' (Task: ' + taskName + '): ' + e.getDmlMessage(i);
+                errorMessages.add(errorMessage);
             }
         }
 
-        sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
-        deleteImportedCSV(cv);
+        try {
+            sendImportResultEmail(totalCount, successCount, errorCount, errorMessages);
+        } finally {
+            deleteImportedCSV(cv);
+        }
+    }
+
+    // Helper class to represent a CSV row with its columns and line number
+    private class CsvRow {
+        List<String> columns;
+        Integer lineNumber;
+        CsvRow(List<String> columns, Integer lineNumber) {
+            this.columns = columns;
+            this.lineNumber = lineNumber;
+        }
+    }
+
+    // Parse CSV content into structured rows, handling BOM, CRLF, quoted commas/newlines
+    private static List<CsvRow> parseCsv(String content) {
+        List<CsvRow> rows = new List<CsvRow>();
+
+        // Return empty list if content is null or blank
+        if (String.isBlank(content)){
+            return rows;
+        }
+
+        // Delete UTF-8 BOM
+        if (content.startsWith('\uFEFF')) {
+            content = content.substring(1); 
+        }
+
+        List<String> currentRow = new List<String>();
+        String currentField = '';
+        Boolean inQuotes = false;
+        Integer lineNumber = 1;
+        Integer rowStartLine = 1;
+        Integer i = 0;
+        Integer len = content.length();
+
+        while (i < len) {
+            String c = content.substring(i, i + 1);
+
+            if (inQuotes) {
+                if (c == '"') {
+                    // Escaped quote: ""
+                    if (i + 1 < len && content.substring(i + 1, i + 2) == '"') {
+                        currentField += '"';
+                        i += 2;
+                    } else {
+                        inQuotes = false;
+                        i++;
+                    }
+                } else {
+                    if (c == '\n') {
+                        lineNumber++;
+                    }
+                    currentField += c;
+                    i++;
+                }
+            } else {
+                if (c == '"') {
+                    inQuotes = true;
+                    i++;
+                } else if (c == ',') {
+                    currentRow.add(currentField);
+                    currentField = '';
+                    i++;
+                } else if (c == '\r') {
+                    currentRow.add(currentField);
+                    currentField = '';
+                    rows.add(new CsvRow(currentRow, rowStartLine));
+                    currentRow = new List<String>();
+                    lineNumber++;
+                    rowStartLine = lineNumber;
+                    i++;
+
+                    // Delete \n if it's CRLF
+                    if (i < len && content.substring(i, i + 1) == '\n') i++;
+                } else if (c == '\n') {
+                    currentRow.add(currentField);
+                    currentField = '';
+                    rows.add(new CsvRow(currentRow, rowStartLine));
+                    currentRow = new List<String>();
+                    lineNumber++;
+                    rowStartLine = lineNumber;
+                    i++;
+                } else {
+                    currentField += c;
+                    i++;
+                }
+            }
+        }
+
+        // Delete the last row if it's empty
+        if (!currentRow.isEmpty() || String.isNotBlank(currentField)) {
+            currentRow.add(currentField);
+            rows.add(new CsvRow(currentRow, rowStartLine));
+        }
+        return rows;
+    }
+
+    private static Boolean isEmptyRow(List<String> columns) {
+        for (String c : columns) {
+            if (String.isNotBlank(c)) return false;
+        }
+        return true;
+    }
+
+    private static Boolean isValidHeader(List<String> csvHeader) {
+        if (csvHeader == null || csvHeader.size() != REQUIRED_HEADERS.size()) return false;
+        for (Integer i = 0; i < REQUIRED_HEADERS.size(); i++) {
+            String csvHeader = csvHeader[i] == null ? '' : csvHeader[i].trim();
+            String v = csvHeader[i] == null ? '' : csvHeader[i].trim();
+            if (v != REQUIRED_HEADERS[i]) return false;
+        }
+        return true;
     }
 
     // Send email to user
@@ -281,18 +468,34 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
         }
     }
 
-    // Get picklist value or default value
-    private static String picklistValueOrDefault(Schema.SObjectField fieldTask, String csvValue) {
-        if (String.isNotBlank(csvValue)) {
-            return csvValue.trim();
+    private static String resolvePicklistValue(
+        List<Schema.PicklistEntry> picklistValues,
+        String csvValue,
+        String fieldName,
+        List<String> rowErrors
+    ) {
+        String value = csvValue == null ? '' : csvValue.trim();
+
+        // Check if the value is not blank and exists in the picklist values
+        if (String.isNotBlank(value)) {
+            for (Schema.PicklistEntry entry : picklistValues) {
+                if (
+                    entry.isActive() &&
+                    entry.getValue().equalsIgnoreCase(value)
+                ) {
+                    return entry.getValue();
+                }
+            }
+            rowErrors.add('Invalid value for ' + fieldName + ': ' + value);
+            return null;
         }
 
-        for (Schema.PicklistEntry entry : fieldTask.getDescribe().getPicklistValues()) {
+        // Check for default value if the CSV value is blank
+        for (Schema.PicklistEntry entry : picklistValues) {
             if (entry.isActive() && entry.isDefaultValue()) {
                 return entry.getValue();
             }
         }
-        
         return null;
     }
 
@@ -333,5 +536,18 @@ public class JIP_ProjectTaskImportQueueable implements Queueable{
             errorMessages.add('Unknown error occurred while sending email.');
         }
         return String.join(errorMessages, '\n');
+    }
+
+    private void failImport(ContentVersion cv, String errorMessage) {
+        List<String> errorMessages = new List<String>();
+        try {
+            sendImportResultEmail(0, 0, 1, errorMessages);
+        }
+        catch (Exception e) {
+            System.debug('Error sending failure email: ' + e.getMessage());
+        }
+        finally {
+            deleteImportedCSV(cv);
+        }
     }
 }
